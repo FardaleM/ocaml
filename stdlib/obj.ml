@@ -186,3 +186,7 @@ module Ephemeron = struct
   external blit_data : t -> t -> unit = "caml_ephe_blit_data"
 
 end
+
+external profinfo_bits : unit -> int = "caml_obj_profinfo_bits" [@@noalloc]
+external get_profinfo : t -> int = "caml_obj_get_profinfo" [@@noalloc]
+external set_profinfo : t -> int -> bool = "caml_obj_set_profinfo"

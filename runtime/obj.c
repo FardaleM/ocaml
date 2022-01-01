@@ -281,3 +281,56 @@ struct queue_chunk {
   struct queue_chunk *next;
   value entries[ENTRIES_PER_QUEUE_CHUNK];
 };
+
+#ifdef WITH_PROFINFO
+
+CAMLprim value caml_obj_profinfo_bits(value unit)
+{
+  (void)unit;
+  return Val_long(PROFINFO_WIDTH);
+}
+
+CAMLprim value caml_obj_get_profinfo(value obj)
+{
+  if (Is_block(obj))
+    return Val_long(Profinfo_val(obj));
+  else
+    return Val_long(0);
+}
+
+CAMLprim value caml_obj_set_profinfo(value obj, value tag)
+{
+  if (Is_block(obj))
+  {
+    header_t hd = Hd_val(obj);
+    hd = Hd_no_profinfo(hd);
+    hd |= ((Long_val(tag) & PROFINFO_MASK) << PROFINFO_SHIFT);
+    Hd_val(obj) = hd;
+    return Val_bool(1);
+  }
+  else
+    return Val_bool(0);
+}
+
+#else
+
+CAMLprim value caml_obj_profinfo_bits(value unit)
+{
+  (void)unit;
+  return Val_long(0);
+}
+
+CAMLprim value caml_obj_get_profinfo(value obj)
+{
+  if (Is_block(obj))
+    return Val_bool(Profinfo_val(obj));
+  else
+    return Val_bool(0);
+}
+
+CAMLprim value caml_obj_set_profinfo(value obj, value tag)
+{
+  return Val_bool(0);
+}
+
+#endif

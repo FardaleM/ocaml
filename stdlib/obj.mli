@@ -181,3 +181,8 @@ module Ephemeron: sig
   (** Maximum length of an ephemeron, ie the maximum number of keys an
       ephemeron could contain *)
 end
+
+(* Access profinfo bits from the program *)
+external profinfo_bits : unit -> int = "caml_obj_profinfo_bits" [@@noalloc]
+external get_profinfo : t -> int = "caml_obj_get_profinfo" [@@noalloc]
+external set_profinfo : t -> int -> bool = "caml_obj_set_profinfo"
