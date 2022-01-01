@@ -69,3 +69,5 @@ val event_near_pos : string -> int -> code_event
 
 (* Recompute the current event *)
 val update_current_event : unit -> unit
+
+val tag_description : int -> Taglib.t list
