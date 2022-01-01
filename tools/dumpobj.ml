@@ -403,7 +403,7 @@ let op_shapes = [
   opBREAK, Nothing;
   opRERAISE, Nothing;
   opRAISE_NOTRACE, Nothing;
-  opPROFINFO, Uint_Disp;
+  opPROFINFO, Uint;
 ]
 
 let print_event ev =

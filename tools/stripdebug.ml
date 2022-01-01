@@ -35,7 +35,7 @@ let stripdebug infile outfile =
   Bytesections.init_record oc;
   List.iter
     (fun (name, len) ->
-      if name = "DBUG" || name = "CRCS" then begin
+      if name = "DBUG" || name = "CRCS" || name = "TAGL" then begin
         seek_in ic (in_channel_length ic + len)
       end else begin
         copy_file_chunk ic oc len;
