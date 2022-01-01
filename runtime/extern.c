@@ -760,6 +760,12 @@ static void extern_rec(struct caml_extern_state* s, value v)
     tag_t tag = Tag_hd(hd);
     mlsize_t sz = Wosize_hd(hd);
 
+#ifdef WITH_PROFINFO
+    if (Profinfo_hd(hd)) {
+      writecode32(s, CODE_PROFINFO, Profinfo_hd(hd));
+    }
+#endif
+
     if (tag == Forward_tag) {
       value f = Forward_val (v);
       if (Is_block (f)

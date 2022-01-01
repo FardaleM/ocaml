@@ -77,6 +77,7 @@
 /* #define CODE_CUSTOM 0x12  -- no longer supported */
 #define CODE_CUSTOM_LEN 0x18
 #define CODE_CUSTOM_FIXED 0x19
+#define CODE_PROFINFO 0x1a
 
 #if ARCH_FLOAT_ENDIANNESS == 0x76543210
 #define CODE_DOUBLE_NATIVE CODE_DOUBLE_BIG

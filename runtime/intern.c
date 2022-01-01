@@ -366,6 +366,14 @@ static void intern_alloc_storage(struct caml_intern_state* s, mlsize_t whsize,
   return;
 }
 
+#ifndef WITH_PROFINFO
+#define Make_intern_header Make_header
+#else
+uintnat next_profinfo;
+#define Make_intern_header(wosize, tag, color) \
+      (Make_header_with_profinfo(wosize, tag, color, next_profinfo))
+#endif
+
 static value intern_alloc_obj(struct caml_intern_state* s, caml_domain_state* d,
                               mlsize_t wosize, tag_t tag)
 {
@@ -375,7 +383,7 @@ static value intern_alloc_obj(struct caml_intern_state* s, caml_domain_state* d,
     CAMLassert ((value*)s->intern_dest >= d->young_start &&
                 (value*)s->intern_dest < d->young_end);
     p = s->intern_dest;
-    *s->intern_dest = Make_header (wosize, tag, 0);
+    *s->intern_dest = Make_intern_header (wosize, tag, 0);
     s->intern_dest += 1 + wosize;
   } else {
     p = caml_shared_try_alloc(d->shared_heap, wosize, tag, 0 /* not pinned */);
@@ -384,7 +392,7 @@ static value intern_alloc_obj(struct caml_intern_state* s, caml_domain_state* d,
       intern_cleanup (s);
       caml_raise_out_of_memory();
     }
-    Hd_hp(p) = Make_header (wosize, tag, caml_global_heap_state.MARKED);
+    Hd_hp(p) = Make_intern_header (wosize, tag, caml_global_heap_state.MARKED);
   }
   return Val_hp(p);
 }
@@ -435,6 +443,20 @@ static void intern_rec(struct caml_intern_state* s,
     if (--(sp->arg) == 0) sp--;
     /* Read a value and set v to this value */
   code = read8u(s);
+  if (code == CODE_PROFINFO)
+  {
+#ifdef WITH_PROFINFO
+    next_profinfo = read32u(s);
+#else
+    (void)read32u(s);
+#endif
+    code = read8u(s);
+  } else
+  {
+#ifdef WITH_PROFINFO
+    next_profinfo = 0;
+#endif
+  }
   if (code >= PREFIX_SMALL_INT) {
     if (code >= PREFIX_SMALL_BLOCK) {
       /* Small block */

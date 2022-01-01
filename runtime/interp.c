@@ -218,6 +218,22 @@ static __thread intnat caml_bcodcount;
 
 static value raise_unhandled;
 
+#ifdef WITH_PROFINFO
+
+static uintnat next_profinfo;
+static inline uintnat pop_profinfo(void)
+{
+  uintnat result = next_profinfo;
+  next_profinfo = 0;
+  return result;
+}
+
+#undef Alloc_small
+#define Alloc_small(result, wosize, tag) \
+  Alloc_small_with_profinfo(result, wosize, tag, pop_profinfo())
+
+#endif /* WITH_PROFINFO */
+
 /* The interpreter itself */
 
 value caml_interprete(code_t prog, asize_t prog_size)
@@ -1223,6 +1239,13 @@ value caml_interprete(code_t prog, asize_t prog_size)
       accu = Field (meths, li-1);
       Next;
     }
+
+    Instruct(PROFINFO):
+#ifdef WITH_PROFINFO
+      next_profinfo = *pc;
+#endif
+      pc++;
+      Next;
 
 /* Debugging and machine control */
 
