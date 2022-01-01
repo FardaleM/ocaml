@@ -68,13 +68,13 @@ let rec apply_coercion loc strict restr arg =
       name_lambda strict arg (fun id ->
         let get_field pos = Lprim(Pfield pos,[Lvar id], loc) in
         let lam =
-          Lprim(Pmakeblock(0, Immutable, None),
+          Lprim(Pmakeblock(0, Immutable, None, Taglib.default),
                 List.map (apply_coercion_field loc get_field) pos_cc_list,
                 loc)
         in
         wrap_id_pos_list loc id_pos_list get_field lam)
   | Tcoerce_functor(cc_arg, cc_res) ->
-      let param = Ident.create "funarg" in
+      let param = Ident.create_dummy "funarg" in
       let carg = apply_coercion loc Alias cc_arg (Lvar param) in
       apply_coercion_result loc strict arg [param] [carg] cc_res
   | Tcoerce_primitive { pc_loc; pc_desc; pc_env; pc_type; } ->
@@ -89,7 +89,7 @@ and apply_coercion_field loc get_field (pos, cc) =
 and apply_coercion_result loc strict funct params args cc_res =
   match cc_res with
   | Tcoerce_functor(cc_arg, cc_res) ->
-    let param = Ident.create "funarg" in
+    let param = Ident.create_dummy "funarg" in
     let arg = apply_coercion loc Alias cc_arg (Lvar param) in
     apply_coercion_result loc strict funct
       (param :: params) (arg :: args) cc_res
@@ -194,7 +194,8 @@ let undefined_location loc =
   Lconst(Const_block(0,
                      [Const_base(Const_string (fname, None));
                       Const_base(Const_int line);
-                      Const_base(Const_int char)]))
+                      Const_base(Const_int char)],
+                     Taglib.default))
 
 let init_shape modl =
   let rec init_shape_mod env mty =
@@ -202,9 +203,9 @@ let init_shape modl =
       Mty_ident _ ->
         raise Not_found
     | Mty_alias _ ->
-        Const_block (1, [Const_pointer 0])
+        Const_block (1, [Const_pointer 0], Taglib.default)
     | Mty_signature sg ->
-        Const_block(0, [Const_block(0, init_shape_struct env sg)])
+        Const_block(0, [Const_block(0, init_shape_struct env sg, Taglib.default)], Taglib.default)
     | Mty_functor _ ->
         raise Not_found (* can we do better? *)
   and init_shape_struct env sg =
@@ -461,7 +462,7 @@ and transl_structure loc fields cc rootpath final_env = function
       let body, size =
         match cc with
           Tcoerce_none ->
-            Lprim(Pmakeblock(0, Immutable, None),
+            Lprim(Pmakeblock(0, Immutable, None, Taglib.default),
                   List.map (fun id -> Lvar id) (List.rev fields), loc),
               List.length fields
         | Tcoerce_structure(pos_cc_list, id_pos_list) ->
@@ -474,7 +475,7 @@ and transl_structure loc fields cc rootpath final_env = function
             let get_field pos = Lvar v.(pos)
             and ids = List.fold_right IdentSet.add fields IdentSet.empty in
             let lam =
-              Lprim(Pmakeblock(0, Immutable, None),
+              Lprim(Pmakeblock(0, Immutable, None, Taglib.default),
                   List.map
                     (fun (pos, cc) ->
                       match cc with
@@ -594,7 +595,7 @@ and transl_structure loc fields cc rootpath final_env = function
       | Tstr_include incl ->
           let ids = bound_value_identifiers incl.incl_type in
           let modl = incl.incl_mod in
-          let mid = Ident.create "include" in
+          let mid = Ident.create_dummy "include" in
           let rec rebind_idents pos newfields = function
               [] ->
                 transl_structure loc newfields cc rootpath final_env rem
@@ -864,7 +865,7 @@ let transl_store_structure glob map prims str =
             Lsequence(lam,
                       Llet(Strict, Pgenval, id,
                            subst_lambda subst
-                             (Lprim(Pmakeblock(0, Immutable, None),
+                             (Lprim(Pmakeblock(0, Immutable, None, Taglib.default),
                                     List.map (fun id -> Lvar id)
                                       (defined_idents str.str_items), loc)),
                            Lsequence(store_ident loc id,
@@ -892,7 +893,7 @@ let transl_store_structure glob map prims str =
             Lsequence(lam,
                       Llet(Strict, Pgenval, id,
                            subst_lambda subst
-                             (Lprim(Pmakeblock(0, Immutable, None),
+                             (Lprim(Pmakeblock(0, Immutable, None, Taglib.default),
                                     List.map field map, loc)),
                            Lsequence(store_ident loc id,
                                      transl_store rootpath
@@ -970,7 +971,7 @@ let transl_store_structure glob map prims str =
         | Tstr_include incl ->
             let ids = bound_value_identifiers incl.incl_type in
             let modl = incl.incl_mod in
-            let mid = Ident.create "include" in
+            let mid = Ident.create_dummy "include" in
             let loc = incl.incl_loc in
             let rec store_idents pos = function
                 [] -> transl_store rootpath (add_idents true ids subst) rem
@@ -1195,7 +1196,7 @@ let transl_toplevel_item item =
   | Tstr_include incl ->
       let ids = bound_value_identifiers incl.incl_type in
       let modl = incl.incl_mod in
-      let mid = Ident.create "include" in
+      let mid = Ident.create_dummy "include" in
       let rec set_idents pos = function
         [] ->
           lambda_unit
@@ -1239,13 +1240,13 @@ let transl_package_flambda component_names coercion =
   in
   size,
   apply_coercion Location.none Strict coercion
-    (Lprim(Pmakeblock(0, Immutable, None),
+    (Lprim(Pmakeblock(0, Immutable, None, Taglib.default),
            List.map get_component component_names,
            Location.none))
 
 let transl_package component_names target_name coercion =
   let components =
-    Lprim(Pmakeblock(0, Immutable, None),
+    Lprim(Pmakeblock(0, Immutable, None, Taglib.default),
           List.map get_component component_names, Location.none) in
   Lprim(Psetglobal target_name,
         [apply_coercion Location.none Strict coercion components],
@@ -1283,11 +1284,11 @@ let transl_store_package component_names target_name coercion =
          0 component_names)
   | Tcoerce_structure (pos_cc_list, _id_pos_list) ->
       let components =
-        Lprim(Pmakeblock(0, Immutable, None),
+        Lprim(Pmakeblock(0, Immutable, None, Taglib.default),
               List.map get_component component_names,
               Location.none)
       in
-      let blk = Ident.create "block" in
+      let blk = Ident.create_dummy "block" in
       (List.length pos_cc_list,
        Llet (Strict, Pgenval, blk,
              apply_coercion Location.none Strict coercion components,

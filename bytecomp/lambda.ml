@@ -59,7 +59,7 @@ type primitive =
   | Pgetglobal of Ident.t
   | Psetglobal of Ident.t
   (* Operations on heap blocks *)
-  | Pmakeblock of int * mutable_flag * block_shape
+  | Pmakeblock of int * mutable_flag * block_shape * Taglib.t
   | Pfield of int
   | Pfield_computed
   | Psetfield of int * immediate_or_pointer * initialization_or_assignment
@@ -92,7 +92,7 @@ type primitive =
   | Pstringlength | Pstringrefu  | Pstringrefs
   | Pbyteslength | Pbytesrefu | Pbytessetu | Pbytesrefs | Pbytessets
   (* Array operations *)
-  | Pmakearray of array_kind * mutable_flag
+  | Pmakearray of array_kind * mutable_flag * Taglib.t
   | Pduparray of array_kind * mutable_flag
   | Parraylength of array_kind
   | Parrayrefu of array_kind
@@ -189,7 +189,7 @@ and raise_kind =
 type structured_constant =
     Const_base of constant
   | Const_pointer of int
-  | Const_block of int * structured_constant list
+  | Const_block of int * structured_constant list * Taglib.t
   | Const_float_array of string list
   | Const_immstring of string
 
@@ -391,7 +391,9 @@ let make_key e =
 let name_lambda strict arg fn =
   match arg with
     Lvar id -> fn id
-  | _ -> let id = Ident.create "let" in Llet(strict, Pgenval, id, arg, fn id)
+  | _ ->
+      let id = Ident.create_dummy "let" in
+      Llet(strict, Pgenval, id, arg, fn id)
 
 let name_lambda_list args fn =
   let rec name_list names = function
@@ -399,7 +401,7 @@ let name_lambda_list args fn =
   | (Lvar _ as arg) :: rem ->
       name_list (arg :: names) rem
   | arg :: rem ->
-      let id = Ident.create "let" in
+      let id = Ident.create_dummy "let" in
       Llet(Strict, Pgenval, id, arg, name_list (Lvar id :: names) rem) in
   name_list [] args
 
@@ -699,7 +701,7 @@ let lam_of_loc kind loc =
           Const_base (Const_int lnum);
           Const_base (Const_int cnum);
           Const_base (Const_int enum);
-        ]))
+        ], Taglib.default))
   | Loc_FILE -> Lconst (Const_immstring file)
   | Loc_MODULE ->
     let filename = Filename.basename file in

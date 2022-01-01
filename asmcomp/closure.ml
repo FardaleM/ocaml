@@ -423,7 +423,7 @@ let simplif_arith_prim_pure fpc p (args, approxs) dbg =
 
 let field_approx n = function
   | Value_tuple a when n < Array.length a -> a.(n)
-  | Value_const (Uconst_ref(_, Some (Uconst_block(_, l))))
+  | Value_const (Uconst_ref(_, Some (Uconst_block(_, l, _))))
     when n < List.length l ->
       Value_const (List.nth l n)
   | _ -> Value_unknown
@@ -431,13 +431,13 @@ let field_approx n = function
 let simplif_prim_pure fpc p (args, approxs) dbg =
   match p, args, approxs with
   (* Block construction *)
-  | Pmakeblock(tag, Immutable, _kind), _, _ ->
+  | Pmakeblock(tag, Immutable, _kind, tagdesc), _, _ ->
       let field = function
         | Value_const c -> c
         | _ -> raise Exit
       in
       begin try
-        let cst = Uconst_block (tag, List.map field approxs) in
+        let cst = Uconst_block (tag, List.map field approxs, tagdesc) in
         let name =
           Compilenv.new_structured_constant cst ~shared:true
         in
@@ -446,7 +446,7 @@ let simplif_prim_pure fpc p (args, approxs) dbg =
         (Uprim(p, args, dbg), Value_tuple (Array.of_list approxs))
       end
   (* Field access *)
-  | Pfield n, _, [ Value_const(Uconst_ref(_, Some (Uconst_block(_, l)))) ]
+  | Pfield n, _, [ Value_const(Uconst_ref(_, Some (Uconst_block(_, l, _)))) ]
     when n < List.length l ->
       make_const (List.nth l n)
   | Pfield n, [ Uprim(Pmakeblock _, ul, _) ], [approx]
@@ -492,7 +492,7 @@ let simplif_prim fpc p (args, approxs as args_approxs) dbg =
     (* XXX : always return the same approxs as simplif_prim_pure? *)
     let approx =
       match p with
-      | Pmakeblock(_, Immutable, _kind) ->
+      | Pmakeblock(_, Immutable, _kind, _tag) ->
           Value_tuple (Array.of_list approxs)
       | _ ->
           Value_unknown
@@ -583,7 +583,7 @@ let rec substitute loc fpc sb rn ulam =
            in this substitute function.
         *)
         match sarg with
-        | Uconst (Uconst_ref (_,  Some (Uconst_block (tag, _)))) ->
+        | Uconst (Uconst_ref (_,  Some (Uconst_block (tag, _, _)))) ->
             find_action sw.us_index_blocks sw.us_actions_blocks tag
         | Uconst (Uconst_ptr tag) ->
             find_action sw.us_index_consts sw.us_actions_consts tag
@@ -686,8 +686,8 @@ let rec bind_params_rec loc fpc subst params args body =
         let p1' = Ident.rename p1 in
         let u1, u2 =
           match Ident.name p1, a1 with
-          | "*opt*", Uprim(Pmakeblock(0, Immutable, kind), [a], dbg) ->
-              a, Uprim(Pmakeblock(0, Immutable, kind), [Uvar p1'], dbg)
+          | "*opt*", Uprim(Pmakeblock(0, Immutable, kind, tag), [a], dbg) ->
+              a, Uprim(Pmakeblock(0, Immutable, kind, tag), [Uvar p1'], dbg)
           | _ ->
               a1, Uvar p1'
         in
@@ -818,8 +818,8 @@ let rec close fenv cenv = function
         | Const_base(Const_int n) -> Uconst_int n
         | Const_base(Const_char c) -> Uconst_int (Char.code c)
         | Const_pointer n -> Uconst_ptr n
-        | Const_block (tag, fields) ->
-            str (Uconst_block (tag, List.map transl fields))
+        | Const_block (tag, fields, tagdesc) ->
+            str (Uconst_block (tag, List.map transl fields, tagdesc))
         | Const_float_array sl ->
             (* constant float arrays are really immutable *)
             str (Uconst_float_array (List.map float_of_string sl))
@@ -840,7 +840,7 @@ let rec close fenv cenv = function
       in
       make_const (transl cst)
   | Lfunction _ as funct ->
-      close_one_function fenv cenv (Ident.create "fun") funct
+      close_one_function fenv cenv (Ident.create_dummy "fun") funct
 
     (* We convert [f a] to [let a' = a in let f' = f in fun b c -> f' a' b c]
        when fun_arity > nargs *)
@@ -863,10 +863,10 @@ let rec close fenv cenv = function
       | ((ufunct, (Value_closure(fundesc, _) as fapprox)), uargs)
           when nargs < fundesc.fun_arity ->
         let first_args = List.map (fun arg ->
-          (Ident.create "arg", arg) ) uargs in
+          (Ident.create_dummy "arg", arg) ) uargs in
         let final_args =
           Array.to_list (Array.init (fundesc.fun_arity - nargs)
-                                    (fun _ -> Ident.create "arg")) in
+                                    (fun _ -> Ident.create_dummy "arg")) in
         let rec iter args body =
           match args with
               [] -> body
@@ -878,7 +878,7 @@ let rec close fenv cenv = function
           (List.map (fun (arg1, _arg2) -> Lvar arg1) first_args)
           @ (List.map (fun arg -> Lvar arg ) final_args)
         in
-        let funct_var = Ident.create "funct" in
+        let funct_var = Ident.create_dummy "funct" in
         let fenv = Tbl.add funct_var fapprox fenv in
         let (new_fun, approx) = close fenv cenv
           (Lfunction{
@@ -902,7 +902,8 @@ let rec close fenv cenv = function
 
       | ((ufunct, Value_closure(fundesc, _approx_res)), uargs)
         when fundesc.fun_arity > 0 && nargs > fundesc.fun_arity ->
-          let args = List.map (fun arg -> Ident.create "arg", arg) uargs in
+          let make_arg arg = (Ident.create_dummy "arg", arg) in
+          let args = List.map make_arg uargs in
           let (first_args, rem_args) = split_list fundesc.fun_arity args in
           let first_args = List.map (fun (id, _) -> Uvar id) first_args in
           let rem_args = List.map (fun (id, _) -> Uvar id) rem_args in
@@ -951,7 +952,7 @@ let rec close fenv cenv = function
       then begin
         (* Simple case: only function definitions *)
         let (clos, infos) = close_functions fenv cenv defs in
-        let clos_ident = Ident.create "clos" in
+        let clos_ident = Ident.create_dummy "clos" in
         let fenv_body =
           List.fold_right
             (fun (id, _pos, approx) fenv -> Tbl.add id approx fenv)
@@ -1182,7 +1183,7 @@ and close_functions fenv cenv fun_defs =
   let useless_env = ref initially_closed in
   (* Translate each function definition *)
   let clos_fundef (id, params, body, fundesc, dbg) env_pos =
-    let env_param = Ident.create "env" in
+    let env_param = Ident.create_dummy "env" in
     let cenv_fv =
       build_closure_env env_param (fv_pos - env_pos) fv in
     let cenv_body =
@@ -1335,7 +1336,7 @@ let collect_exported_structured_constants a =
     | Uconst_ref (_s, None) -> assert false (* Cannot be generated *)
     | Uconst_int _ | Uconst_ptr _ -> ()
   and structured_constant = function
-    | Uconst_block (_, ul) -> List.iter const ul
+    | Uconst_block (_, ul, _) -> List.iter const ul
     | Uconst_float _ | Uconst_int32 _
     | Uconst_int64 _ | Uconst_nativeint _
     | Uconst_float_array _ | Uconst_string _ -> ()

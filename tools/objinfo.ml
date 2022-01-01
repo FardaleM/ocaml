@@ -56,6 +56,36 @@ let print_line name =
 let print_required_global id =
   printf "\t%s\n" (Ident.name id)
 
+let print_array f members =
+  ("[|" ^ String.concat ";" (List.map f (Array.to_list members)) ^ "|]")
+
+let print_approx = function
+  | Taglib.Any -> "Any"
+  | Taglib.Char -> "Char"
+  | Taglib.Int -> "Int"
+  | Taglib.Polymorphic_variants -> "Polymorphic_variants"
+  | Taglib.Constants strings ->
+      "Constants " ^ print_array (sprintf "%S") strings
+
+let print_tag =
+  let print_field (f, apx) =
+    Printf.sprintf "(%s, %S)" (print_approx apx) f in
+  function
+  | Taglib.Unknown ->
+      printf "\tUnknown\n"
+  | Taglib.Array apx ->
+      printf "\tArray %s\n" (print_approx apx)
+  | Taglib.Tuple {name; tag; fields} ->
+      printf "\tTuple {name = %s; tag = %d; fields = %s}\n"
+        name tag (print_array print_approx fields)
+  | Taglib.Record {name; tag; fields} ->
+      printf "\tRecord {name = %s; tag = %d; fields = %s}\n"
+        name tag (print_array print_field fields)
+  | Taglib.Polymorphic_variant ->
+      printf "\tPolymorphic_variant\n"
+  | Taglib.Polymorphic_variant_constant name ->
+      printf "\tPolymorphic_variant_constant %S\n" name
+
 let print_cmo_infos cu =
   printf "Unit name: %s\n" cu.cu_name;
   print_string "Interfaces imported:\n";
@@ -69,7 +99,9 @@ let print_cmo_infos cu =
         printf "YES\n";
         printf "Primitives declared in this module:\n";
         List.iter print_line l);
-  printf "Force link: %s\n" (if cu.cu_force_link then "YES" else "no")
+  printf "Force link: %s\n" (if cu.cu_force_link then "YES" else "no");
+  printf "Tag library:\n";
+  List.iter print_tag cu.cu_tagl
 
 let print_spaced_string s =
   printf " %s" s

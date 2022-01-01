@@ -36,6 +36,8 @@ let events_by_module =
   (Hashtbl.create 17 : (string, debug_event array) Hashtbl.t)
 let all_events_by_module =
   (Hashtbl.create 17 : (string, debug_event list) Hashtbl.t)
+let all_tags =
+  (Hashtbl.create 257 : (int, Taglib.t list) Hashtbl.t)
 
 let partition_modules evl =
   let rec partition_modules' ev evl =
@@ -84,6 +86,12 @@ let read_symbols' bytecode_file =
     dirs :=
       List.fold_left (fun s e -> StringSet.add e s) !dirs (input_value ic)
   done;
+  let tagl =
+    try
+      ignore (Bytesections.seek_section ic "TAGL");
+      (input_value ic : Taglib.t list)
+    with Not_found -> []
+  in
   begin try
     ignore (Bytesections.seek_section ic "CODE")
   with Not_found ->
@@ -92,15 +100,46 @@ let read_symbols' bytecode_file =
     set_launching_function (List.assoc "manual" loading_modes)
   end;
   close_in_noerr ic;
-  !eventlists, !dirs
+  !eventlists, !dirs, tagl
+
+let print_array f members =
+  ("[|" ^ String.concat ";" (List.map f (Array.to_list members)) ^ "|]")
+
+let print_approx = function
+  | Taglib.Any -> "Any"
+  | Taglib.Char -> "Char"
+  | Taglib.Int -> "Int"
+  | Taglib.Polymorphic_variants -> "Polymorphic_variants"
+  | Taglib.Constants strings ->
+      "Constants " ^ print_array (Printf.sprintf "%S") strings
+
+let prerr_tag =
+  let print_field (f, apx) =
+    Printf.sprintf "(%s, %S)" (print_approx apx) f in
+  function
+  | Taglib.Unknown ->
+      Printf.printf "\tUnknown\n"
+  | Taglib.Array apx ->
+      Printf.printf "\tArray %s\n" (print_approx apx)
+  | Taglib.Tuple {name; tag; fields} ->
+      Printf.printf "\tTuple {name = %s; tag = %d; fields = %s}\n"
+        name tag (print_array print_approx fields)
+  | Taglib.Record {name; tag; fields} ->
+      Printf.printf "\tRecord {name = %s; tag = %d; fields = %s}\n"
+        name tag (print_array print_field fields)
+  | Taglib.Polymorphic_variant ->
+      Printf.printf "\tPolymorphic_variant\n"
+  | Taglib.Polymorphic_variant_constant name ->
+      Printf.printf "\tPolymorphic_variant_constant %S\n" name
 
 let read_symbols bytecode_file =
-  let all_events, all_dirs = read_symbols' bytecode_file in
+  let all_events, all_dirs, tagl = read_symbols' bytecode_file in
 
   modules := []; events := [];
   program_source_dirs := StringSet.elements all_dirs;
   Hashtbl.clear events_by_pc; Hashtbl.clear events_by_module;
   Hashtbl.clear all_events_by_module;
+  Hashtbl.clear all_tags;
 
   List.iter
     (fun evl ->
@@ -130,7 +169,29 @@ let read_symbols bytecode_file =
               sorted_evl
           in
           Hashtbl.add events_by_module md (Array.of_list real_evl))
-    all_events
+    all_events;
+
+  List.iter (function
+      | Taglib.Polymorphic_variant_constant _ -> ()
+      | tag ->
+          let h = Taglib.index tag in
+          match Hashtbl.find all_tags h with
+          | tags -> Hashtbl.replace all_tags h (tag :: tags)
+          | exception Not_found -> Hashtbl.add all_tags h [tag]
+    )
+    tagl;
+
+  Hashtbl.iter (fun _ -> function
+      | [] | [_] -> ()
+      | a :: b :: rest ->
+          prerr_endline "Tag collision:";
+          prerr_tag a;
+          prerr_tag b;
+          begin match List.length rest with
+          | 0 -> ()
+          | n -> prerr_endline ("\t(and " ^ string_of_int n ^ " more)")
+          end
+    ) all_tags
 
 let any_event_at_pc pc =
   Hashtbl.find events_by_pc pc
@@ -140,6 +201,11 @@ let event_at_pc pc =
   match ev.ev_kind with
     Event_pseudo -> raise Not_found
   | _            -> ev
+
+let tag_description tag =
+  match Hashtbl.find all_tags tag with
+  | exception Not_found -> []
+  | tags -> tags
 
 let set_event_at_pc pc =
  try ignore(event_at_pc pc); Debugcom.set_event pc

@@ -142,7 +142,7 @@ let init () =
       let cst = Const_block(Obj.object_tag,
                             [Const_base(Const_string (name, None));
                              Const_base(Const_int (-i-1))
-                            ])
+                            ], Taglib.default)
       in
       literal_table := (c, cst) :: !literal_table)
     Runtimedef.builtin_exceptions;
@@ -212,11 +212,13 @@ let rec transl_const = function
   | Const_base(Const_nativeint i) -> Obj.repr i
   | Const_pointer i -> Obj.repr i
   | Const_immstring s -> Obj.repr s
-  | Const_block(tag, fields) ->
+  | Const_block(tag, fields, tagl) ->
       let block = Obj.new_block tag (List.length fields) in
-      let pos = ref 0 in
-      List.iter
-        (fun c -> Obj.set_field block !pos (transl_const c); incr pos)
+      (*prerr_endline ("CONST_BLOCK: " ^ tagl.Taglib.constructor);*)
+      assert (Obj.set_profinfo block (Taglib.index tagl));
+      (*prerr_endline ("PROFINFO: " ^ string_of_int (Obj.get_profinfo block));*)
+      List.iteri
+        (fun i c -> Obj.set_field block i (transl_const c))
         fields;
       block
   | Const_float_array fields ->

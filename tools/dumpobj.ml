@@ -93,7 +93,7 @@ let rec print_struct_const = function
   | Const_base(Const_nativeint i) -> printf "%ndn" i
   | Const_base(Const_int64 i) -> printf "%LdL" i
   | Const_pointer n -> printf "%da" n
-  | Const_block(tag, args) ->
+  | Const_block(tag, args, _) ->
       printf "<%d>" tag;
       begin match args with
         [] -> ()
@@ -400,6 +400,7 @@ let op_shapes = [
   opBREAK, Nothing;
   opRERAISE, Nothing;
   opRAISE_NOTRACE, Nothing;
+  opPROFINFO, Uint_Disp;
 ];;
 
 let print_event ev =
@@ -515,6 +516,36 @@ let read_primitive_table ic len =
   let p = really_input_string ic len in
   String.split_on_char '\000' p |> List.filter ((<>) "") |> Array.of_list
 
+let print_array f members =
+  ("[|" ^ String.concat ";" (List.map f (Array.to_list members)) ^ "|]")
+
+let print_approx = function
+  | Taglib.Any -> "Any"
+  | Taglib.Char -> "Char"
+  | Taglib.Int -> "Int"
+  | Taglib.Polymorphic_variants -> "Polymorphic_variants"
+  | Taglib.Constants strings ->
+      "Constants " ^ print_array (sprintf "%S") strings
+
+let print_tag =
+  let print_field (f, apx) =
+    Printf.sprintf "(%s, %S)" (print_approx apx) f in
+  function
+  | Taglib.Unknown ->
+      printf "\tUnknown\n"
+  | Taglib.Array apx ->
+      printf "\tArray %s\n" (print_approx apx)
+  | Taglib.Tuple {name; tag; fields} ->
+      printf "\tTuple {name = %s; tag = %d; fields = %s}\n"
+        name tag (print_array print_approx fields)
+  | Taglib.Record {name; tag; fields} ->
+      printf "\tRecord {name = %s; tag = %d; fields = %s}\n"
+        name tag (print_array print_field fields)
+  | Taglib.Polymorphic_variant ->
+      printf "\tPolymorphic_variant\n"
+  | Taglib.Polymorphic_variant_constant name ->
+      printf "\tPolymorphic_variant_constant %S\n" name
+
 (* Print an executable file *)
 
 let dump_exe ic =
@@ -542,7 +573,14 @@ let dump_exe ic =
   with Not_found -> ()
   end;
   let code_size = Bytesections.seek_section ic "CODE" in
-  print_code ic code_size
+  print_code ic code_size;
+  begin try
+    ignore (Bytesections.seek_section ic "TAGL");
+    let tagl : Taglib.t list = input_value ic in
+    printf "Tag library:\n";
+    List.iter print_tag tagl;
+  with Not_found -> ()
+  end
 
 let arg_list = [
   "-noloc", Arg.Clear print_locations, " : don't print source information";

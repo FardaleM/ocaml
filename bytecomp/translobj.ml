@@ -33,11 +33,11 @@ let consts : (structured_constant, Ident.t) Hashtbl.t = Hashtbl.create 17
 
 let share c =
   match c with
-    Const_block (_n, l) when l <> [] ->
+    Const_block (_n, l, _) when l <> [] ->
       begin try
         Lvar (Hashtbl.find consts c)
       with Not_found ->
-        let id = Ident.create "shared" in
+        let id = Ident.create_dummy "shared" in
         Hashtbl.add consts c id;
         Lvar id
       end
@@ -112,7 +112,7 @@ let transl_label_init_general f =
 
 let transl_label_init_flambda f =
   assert(Config.flambda);
-  let method_cache_id = Ident.create "method_cache" in
+  let method_cache_id = Ident.create_dummy "method_cache" in
   method_cache := Lvar method_cache_id;
   (* Calling f (usually Translmod.transl_struct) requires the
      method_cache variable to be initialised to be able to generate
@@ -184,7 +184,7 @@ let oo_wrap env req f x =
       List.fold_left
         (fun lambda id ->
           Llet(StrictOpt, Pgenval, id,
-               Lprim(Pmakeblock(0, Mutable, None),
+               Lprim(Pmakeblock(0, Mutable, None, Taglib.default),
                      [lambda_unit; lambda_unit; lambda_unit],
                      Location.none),
                lambda))
