@@ -3275,10 +3275,10 @@ fi
 if test "${enable_reserved_header_bits+set}" = set; then :
   enableval=$enable_reserved_header_bits; case $enable_reserved_header_bits in #(
   0) :
-    with_profinfo=false
+    profinfo=false
       profinfo_width=0 ;; #(
   [1-9]|[1-2][0-9]|3[0-1]) :
-    with_profinfo=true
+    profinfo=true
       profinfo_width="$enable_reserved_header_bits" ;; #(
   *) :
     as_fn_error $? "invalid argument to --enable-reserved-header-bits" "$LINENO" 5 ;;
