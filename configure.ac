@@ -379,10 +379,10 @@ AC_ARG_ENABLE([reserved-header-bits],
   [reserve BITS (between 0 and 31) bits in block headers for profiling info])],
   [AS_CASE([$enable_reserved_header_bits],
     [0],
-      [with_profinfo=false
+      [profinfo=false
       profinfo_width=0],
     [[[1-9]]|[[1-2]][[0-9]]|3[[0-1]]],
-      [with_profinfo=true
+      [profinfo=true
       profinfo_width="$enable_reserved_header_bits"],
     [AC_MSG_ERROR([invalid argument to --enable-reserved-header-bits])])])
 
