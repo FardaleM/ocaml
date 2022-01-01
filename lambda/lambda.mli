@@ -53,7 +53,7 @@ type primitive =
   | Pgetglobal of Ident.t
   | Psetglobal of Ident.t
   (* Operations on heap blocks *)
-  | Pmakeblock of int * mutable_flag * block_shape
+  | Pmakeblock of int * mutable_flag * block_shape * Taglib.t
   | Pfield of int
   | Pfield_computed
   | Psetfield of int * immediate_or_pointer * initialization_or_assignment
@@ -86,7 +86,7 @@ type primitive =
   | Pstringlength | Pstringrefu  | Pstringrefs
   | Pbyteslength | Pbytesrefu | Pbytessetu | Pbytesrefs | Pbytessets
   (* Array operations *)
-  | Pmakearray of array_kind * mutable_flag
+  | Pmakearray of array_kind * mutable_flag * Taglib.t
   | Pduparray of array_kind * mutable_flag
   (** For [Pduparray], the argument must be an immutable array.
       The arguments of [Pduparray] give the kind and mutability of the
@@ -195,7 +195,7 @@ val equal_boxed_integer : boxed_integer -> boxed_integer -> bool
 
 type structured_constant =
     Const_base of constant
-  | Const_block of int * structured_constant list
+  | Const_block of int * structured_constant list * Taglib.t
   | Const_float_array of string list
   | Const_immstring of string
 
