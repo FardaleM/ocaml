@@ -23,7 +23,7 @@ open Input_handling
 
 (*** Debugging. ***)
 
-let debug_loading = ref false
+let debug_loading = ref true
 
 (*** Load a program. ***)
 

@@ -152,7 +152,7 @@ let ensure_loaded () =
       initialize_loading();
       !launching_func ();
       if !debug_loading then
-        prerr_endline "Waiting for connection...";
+        prerr_endline "Waiting for connection... (mgmt)";
       main_loop ();
       loaded := true;
       prerr_endline "done."

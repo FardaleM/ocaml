@@ -224,6 +224,17 @@ let output_remote_value ic v =
 
 exception Marshalling_error
 
+let remote_tag_descriptors () : Obj.Tag_descriptor.t list =
+  prerr_endline "Request TAGS";
+  output_char !conn.io_out 'T';
+  flush !conn.io_out;
+  match input_value !conn.io_in with
+  | tags ->
+      prerr_endline "Received TAGS";
+      tags
+  | exception (End_of_file | Failure _) ->
+    raise Marshalling_error
+
 module Remote_value =
   struct
     type t = Remote of string | Local of Obj.t
