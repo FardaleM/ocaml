@@ -56,7 +56,7 @@ void caml_disasm_instr(pc)
   case GETFIELD: case SETFIELD: case GETFLOATFIELD: case SETFLOATFIELD:
   case BRANCH: case BRANCHIF: case BRANCHIFNOT: case PUSHTRAP:
   case CONSTINT: case PUSHCONSTINT: case OFFSETINT: case OFFSETREF:
-  case OFFSETCLOSURE: case PUSHOFFSETCLOSURE:
+  case OFFSETCLOSURE: case PUSHOFFSETCLOSURE: case PROFINFO:
     printf(" %d\n", pc[0]); break;
     /* Instructions with two operands */
   case APPTERM: case CLOSURE: case CLOSUREREC: case PUSHGETGLOBALFIELD:
@@ -129,6 +129,7 @@ char * caml_instr_string (code_t pc)
   case OFFSETREF:
   case OFFSETCLOSURE:
   case PUSHOFFSETCLOSURE:
+  case PROFINFO:
     snprintf(buf, sizeof(buf), "%s %d", nam, pc[0]);
     break;
     /* Instructions with two operands */
