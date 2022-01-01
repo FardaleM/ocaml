@@ -329,6 +329,13 @@ static void intern_rec(value *dest)
   struct custom_operations * ops;
   char * codeptr;
   struct intern_item * sp;
+#ifndef WITH_PROFINFO
+#define Make_intern_header Make_header
+#else
+  uintnat next_profinfo;
+#define Make_intern_header(wosize, tag, color) \
+      (Make_header_with_profinfo(wosize, tag, color, next_profinfo))
+#endif
 
   sp = intern_stack;
 
@@ -361,6 +368,20 @@ static void intern_rec(value *dest)
     if (--(sp->arg) == 0) sp--;
     /* Read a value and set v to this value */
   code = read8u();
+  if (code == CODE_PROFINFO)
+  {
+#ifdef WITH_PROFINFO
+    next_profinfo = read32u();
+#else
+    (void)read32u();
+#endif
+    code = read8u();
+  } else
+  {
+#ifdef WITH_PROFINFO
+    next_profinfo = 0;
+#endif
+  }
   if (code >= PREFIX_SMALL_INT) {
     if (code >= PREFIX_SMALL_BLOCK) {
       /* Small block */
@@ -372,7 +393,7 @@ static void intern_rec(value *dest)
       } else {
         v = Val_hp(intern_dest);
         if (intern_obj_table != NULL) intern_obj_table[obj_counter++] = v;
-        *intern_dest = Make_header(size, tag, intern_color);
+        *intern_dest = Make_intern_header(size, tag, intern_color);
         intern_dest += 1 + size;
         /* For objects, we need to freshen the oid */
         if (tag == Object_tag) {
@@ -402,7 +423,7 @@ static void intern_rec(value *dest)
       size = (len + sizeof(value)) / sizeof(value);
       v = Val_hp(intern_dest);
       if (intern_obj_table != NULL) intern_obj_table[obj_counter++] = v;
-      *intern_dest = Make_header(size, String_tag, intern_color);
+      *intern_dest = Make_intern_header(size, String_tag, intern_color);
       intern_dest += 1 + size;
       Field(v, size - 1) = 0;
       ofs_ind = Bsize_wsize(size) - 1;
@@ -474,7 +495,7 @@ static void intern_rec(value *dest)
       case CODE_DOUBLE_BIG:
         v = Val_hp(intern_dest);
         if (intern_obj_table != NULL) intern_obj_table[obj_counter++] = v;
-        *intern_dest = Make_header(Double_wosize, Double_tag,
+        *intern_dest = Make_intern_header(Double_wosize, Double_tag,
                                    intern_color);
         intern_dest += 1 + Double_wosize;
         readfloat((double *) v, code);
@@ -486,7 +507,7 @@ static void intern_rec(value *dest)
         size = len * Double_wosize;
         v = Val_hp(intern_dest);
         if (intern_obj_table != NULL) intern_obj_table[obj_counter++] = v;
-        *intern_dest = Make_header(size, Double_array_tag,
+        *intern_dest = Make_intern_header(size, Double_array_tag,
                                    intern_color);
         intern_dest += 1 + size;
         readfloats((double *) v, len, code);
@@ -571,7 +592,7 @@ static void intern_rec(value *dest)
         size = 1 + (size + sizeof(value) - 1) / sizeof(value);
         v = Val_hp(intern_dest);
         if (intern_obj_table != NULL) intern_obj_table[obj_counter++] = v;
-        *intern_dest = Make_header(size, Custom_tag,
+        *intern_dest = Make_intern_header(size, Custom_tag,
                                    intern_color);
         Custom_ops_val(v) = ops;
 
