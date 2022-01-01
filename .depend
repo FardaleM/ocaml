@@ -1746,6 +1746,7 @@ typing/typeopt.cmo : \
     typing/typedtree.cmi \
     typing/typedecl_unboxed.cmi \
     typing/type_immediacy.cmi \
+    lambda/taglib.cmi \
     typing/predef.cmi \
     typing/path.cmi \
     lambda/lambda.cmi \
@@ -1761,6 +1762,7 @@ typing/typeopt.cmx : \
     typing/typedtree.cmx \
     typing/typedecl_unboxed.cmx \
     typing/type_immediacy.cmx \
+    lambda/taglib.cmx \
     typing/predef.cmx \
     typing/path.cmx \
     lambda/lambda.cmx \
@@ -1774,6 +1776,7 @@ typing/typeopt.cmx : \
 typing/typeopt.cmi : \
     typing/types.cmi \
     typing/typedtree.cmi \
+    lambda/taglib.cmi \
     typing/path.cmi \
     lambda/lambda.cmi \
     typing/env.cmi
@@ -2055,6 +2058,7 @@ bytecomp/dll.cmx : \
 bytecomp/dll.cmi :
 bytecomp/emitcode.cmo : \
     lambda/translmod.cmi \
+    lambda/taglib.cmi \
     typing/primitive.cmi \
     bytecomp/opcodes.cmi \
     utils/misc.cmi \
@@ -2072,6 +2076,7 @@ bytecomp/emitcode.cmo : \
     bytecomp/emitcode.cmi
 bytecomp/emitcode.cmx : \
     lambda/translmod.cmx \
+    lambda/taglib.cmx \
     typing/primitive.cmx \
     bytecomp/opcodes.cmx \
     utils/misc.cmx \
@@ -2094,6 +2099,7 @@ bytecomp/emitcode.cmi : \
     file_formats/cmo_format.cmi
 bytecomp/instruct.cmo : \
     typing/types.cmi \
+    lambda/taglib.cmi \
     typing/subst.cmi \
     parsing/location.cmi \
     lambda/lambda.cmi \
@@ -2102,6 +2108,7 @@ bytecomp/instruct.cmo : \
     bytecomp/instruct.cmi
 bytecomp/instruct.cmx : \
     typing/types.cmx \
+    lambda/taglib.cmx \
     typing/subst.cmx \
     parsing/location.cmx \
     lambda/lambda.cmx \
@@ -2110,6 +2117,7 @@ bytecomp/instruct.cmx : \
     bytecomp/instruct.cmi
 bytecomp/instruct.cmi : \
     typing/types.cmi \
+    lambda/taglib.cmi \
     typing/subst.cmi \
     parsing/location.cmi \
     lambda/lambda.cmi \
@@ -2145,6 +2153,7 @@ bytecomp/printinstr.cmx : \
 bytecomp/printinstr.cmi : \
     bytecomp/instruct.cmi
 bytecomp/symtable.cmo : \
+    lambda/taglib.cmi \
     lambda/runtimedef.cmi \
     typing/predef.cmi \
     utils/misc.cmi \
@@ -2160,6 +2169,7 @@ bytecomp/symtable.cmo : \
     parsing/asttypes.cmi \
     bytecomp/symtable.cmi
 bytecomp/symtable.cmx : \
+    lambda/taglib.cmx \
     lambda/runtimedef.cmx \
     typing/predef.cmx \
     utils/misc.cmx \
@@ -3466,6 +3476,7 @@ lambda/debuginfo.cmi : \
     parsing/asttypes.cmi
 lambda/lambda.cmo : \
     typing/types.cmi \
+    lambda/taglib.cmi \
     typing/primitive.cmi \
     typing/path.cmi \
     utils/misc.cmi \
@@ -3478,6 +3489,7 @@ lambda/lambda.cmo : \
     lambda/lambda.cmi
 lambda/lambda.cmx : \
     typing/types.cmx \
+    lambda/taglib.cmx \
     typing/primitive.cmx \
     typing/path.cmx \
     utils/misc.cmx \
@@ -3490,6 +3502,7 @@ lambda/lambda.cmx : \
     lambda/lambda.cmi
 lambda/lambda.cmi : \
     typing/types.cmi \
+    lambda/taglib.cmi \
     typing/primitive.cmi \
     typing/path.cmi \
     typing/ident.cmi \
@@ -3500,6 +3513,7 @@ lambda/matching.cmo : \
     typing/types.cmi \
     typing/typeopt.cmi \
     typing/typedtree.cmi \
+    lambda/taglib.cmi \
     lambda/switch.cmi \
     typing/printpat.cmi \
     lambda/printlambda.cmi \
@@ -3522,6 +3536,7 @@ lambda/matching.cmx : \
     typing/types.cmx \
     typing/typeopt.cmx \
     typing/typedtree.cmx \
+    lambda/taglib.cmx \
     lambda/switch.cmx \
     typing/printpat.cmx \
     lambda/printlambda.cmx \
@@ -3624,6 +3639,13 @@ lambda/tmc.cmx : \
     lambda/tmc.cmi
 lambda/tmc.cmi : \
     lambda/lambda.cmi
+lambda/taglib.cmo : \
+    utils/config.cmi \
+    lambda/taglib.cmi
+lambda/taglib.cmx : \
+    utils/config.cmx \
+    lambda/taglib.cmi
+lambda/taglib.cmi :
 lambda/translattribute.cmo : \
     utils/warnings.cmi \
     typing/typedtree.cmi \
@@ -3655,6 +3677,7 @@ lambda/translclass.cmo : \
     typing/typedtree.cmi \
     lambda/translobj.cmi \
     lambda/translcore.cmi \
+    lambda/taglib.cmi \
     typing/path.cmi \
     lambda/matching.cmi \
     parsing/location.cmi \
@@ -3672,6 +3695,7 @@ lambda/translclass.cmx : \
     typing/typedtree.cmx \
     lambda/translobj.cmx \
     lambda/translcore.cmx \
+    lambda/taglib.cmx \
     typing/path.cmx \
     lambda/matching.cmx \
     parsing/location.cmx \
@@ -3698,6 +3722,7 @@ lambda/translcore.cmo : \
     lambda/translprim.cmi \
     lambda/translobj.cmi \
     lambda/translattribute.cmi \
+    lambda/taglib.cmi \
     typing/printtyp.cmi \
     typing/primitive.cmi \
     typing/predef.cmi \
@@ -3725,6 +3750,7 @@ lambda/translcore.cmx : \
     lambda/translprim.cmx \
     lambda/translobj.cmx \
     lambda/translattribute.cmx \
+    lambda/taglib.cmx \
     typing/printtyp.cmx \
     typing/primitive.cmx \
     typing/predef.cmx \
@@ -3761,6 +3787,7 @@ lambda/translmod.cmo : \
     lambda/translcore.cmi \
     lambda/translclass.cmi \
     lambda/translattribute.cmi \
+    lambda/taglib.cmi \
     typing/primitive.cmi \
     typing/predef.cmi \
     typing/path.cmi \
@@ -3783,6 +3810,7 @@ lambda/translmod.cmx : \
     lambda/translcore.cmx \
     lambda/translclass.cmx \
     lambda/translattribute.cmx \
+    lambda/taglib.cmx \
     typing/primitive.cmx \
     typing/predef.cmx \
     typing/path.cmx \
@@ -3804,6 +3832,7 @@ lambda/translmod.cmi : \
     lambda/lambda.cmi \
     typing/ident.cmi
 lambda/translobj.cmo : \
+    lambda/taglib.cmi \
     typing/primitive.cmi \
     utils/misc.cmi \
     lambda/lambda.cmi \
@@ -3815,6 +3844,7 @@ lambda/translobj.cmo : \
     parsing/asttypes.cmi \
     lambda/translobj.cmi
 lambda/translobj.cmx : \
+    lambda/taglib.cmx \
     typing/primitive.cmx \
     utils/misc.cmx \
     lambda/lambda.cmx \
@@ -3833,6 +3863,7 @@ lambda/translprim.cmo : \
     typing/types.cmi \
     typing/typeopt.cmi \
     typing/typedtree.cmi \
+    lambda/taglib.cmi \
     typing/primitive.cmi \
     typing/predef.cmi \
     typing/path.cmi \
@@ -3851,6 +3882,7 @@ lambda/translprim.cmx : \
     typing/types.cmx \
     typing/typeopt.cmx \
     typing/typedtree.cmx \
+    lambda/taglib.cmx \
     typing/primitive.cmx \
     typing/predef.cmx \
     typing/path.cmx \
@@ -3890,6 +3922,7 @@ file_formats/cmi_format.cmi : \
     typing/types.cmi \
     utils/misc.cmi
 file_formats/cmo_format.cmi : \
+    lambda/taglib.cmi \
     utils/misc.cmi \
     lambda/lambda.cmi \
     typing/ident.cmi

@@ -239,22 +239,31 @@ let emit_instr = function
           else (out opCONSTINT; out_int i)
       | Const_base(Const_char c) ->
           out opCONSTINT; out_int (Char.code c)
-      | Const_block(t, []) ->
+      | Const_block(t, [], _) ->
           if t = 0 then out opATOM0 else (out opATOM; out_int t)
       | _ ->
           out opGETGLOBAL; slot_for_literal sc
       end
-  | Kmakeblock(n, t) ->
+  | Kmakeblock(n, t, tagl) ->
       if n = 0 then
         if t = 0 then out opATOM0 else (out opATOM; out_int t)
-      else if n < 4 then (out(opMAKEBLOCK1 + n - 1); out_int t)
-      else (out opMAKEBLOCK; out_int n; out_int t)
+      else (
+        out opPROFINFO;
+        out_int (Taglib.index tagl);
+        if n < 4 then (out(opMAKEBLOCK1 + n - 1); out_int t)
+        else (out opMAKEBLOCK; out_int n; out_int t)
+      )
   | Kgetfield n ->
       if n < 4 then out(opGETFIELD0 + n) else (out opGETFIELD; out_int n)
   | Ksetfield n ->
       if n < 4 then out(opSETFIELD0 + n) else (out opSETFIELD; out_int n)
-  | Kmakefloatblock(n) ->
-      if n = 0 then out opATOM0 else (out opMAKEFLOATBLOCK; out_int n)
+  | Kmakefloatblock(n, tagl) ->
+      if n = 0 then out opATOM0 else (
+        out opPROFINFO;
+        out_int (Taglib.index tagl);
+        out opMAKEFLOATBLOCK;
+        out_int n
+      )
   | Kgetfloatfield n -> out opGETFLOATFIELD; out_int n
   | Ksetfloatfield n -> out opSETFLOATFIELD; out_int n
   | Kvectlength -> out opVECTLENGTH
@@ -371,7 +380,7 @@ let rec emit = function
           else (out opPUSHCONSTINT; out_int i)
       | Const_base(Const_char c) ->
           out opPUSHCONSTINT; out_int(Char.code c)
-      | Const_block(t, []) ->
+      | Const_block(t, [], _) ->
           if t = 0 then out opPUSHATOM0 else (out opPUSHATOM; out_int t)
       | _ ->
           out opPUSHGETGLOBAL; slot_for_literal sc
@@ -422,7 +431,9 @@ let to_file outchan unit_name objfile ~required_globals code =
       cu_required_globals = Ident.Set.elements required_globals;
       cu_force_link = !Clflags.link_everything;
       cu_debug = pos_debug;
-      cu_debugsize = size_debug } in
+      cu_debugsize = size_debug;
+      cu_tagl = Taglib.emit_tags ();
+    } in
   init();                               (* Free out_buffer and reloc_info *)
   Btype.cleanup_abbrev ();              (* Remove any cached abbreviation
                                            expansion before saving *)

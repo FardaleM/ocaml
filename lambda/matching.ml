@@ -3449,7 +3449,7 @@ let failure_handler ~scopes loc ~failer () =
     Lprim
       ( Praise Raise_regular,
         [ Lprim
-            ( Pmakeblock (0, Immutable, None),
+            ( Pmakeblock (0, Immutable, None, Taglib.default),
               [ slot;
                 Lconst
                   (Const_block
@@ -3457,7 +3457,8 @@ let failure_handler ~scopes loc ~failer () =
                        [ Const_base (Const_string (fname, loc, None));
                          Const_base (Const_int line);
                          Const_base (Const_int char)
-                       ] ))
+                       ],
+                       Taglib.default))
               ],
               sloc )
         ],
@@ -3620,7 +3621,7 @@ let assign_pat ~scopes opt nraise catch_ids loc pat lam =
     | Tpat_tuple patl, Lprim (Pmakeblock _, lams, _) ->
         opt := true;
         List.fold_left2 collect acc patl lams
-    | Tpat_tuple patl, Lconst (Const_block (_, scl)) ->
+    | Tpat_tuple patl, Lconst (Const_block (_, scl, _)) ->
         opt := true;
         let collect_const acc pat sc = collect acc pat (Lconst sc) in
         List.fold_left2 collect_const acc patl scl
@@ -3768,7 +3769,7 @@ let do_for_multiple_match ~scopes loc paraml pat_act_list partial =
   let repr = None in
   let arg =
     let sloc = Scoped_location.of_location ~scopes loc in
-    Lprim (Pmakeblock (0, Immutable, None), paraml, sloc) in
+    Lprim (Pmakeblock (0, Immutable, None, Taglib.default), paraml, sloc) in
   let handler =
     let partial = check_partial pat_act_list partial in
     let rows = map_on_rows (fun p -> (p, [])) pat_act_list in

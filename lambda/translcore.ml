@@ -62,7 +62,7 @@ let transl_extension_constructor ~scopes env path ext =
   let loc = of_location ~scopes ext.ext_loc in
   match ext.ext_kind with
     Text_decl _ ->
-      Lprim (Pmakeblock (Obj.object_tag, Immutable, None),
+      Lprim (Pmakeblock (Obj.object_tag, Immutable, None, Taglib.default),
         [Lconst (Const_base (Const_string (name, ext.ext_loc, None)));
          Lprim (prim_fresh_oo_id, [Lconst (const_int 0)], loc)],
         loc)
@@ -197,17 +197,24 @@ let assert_failed ~scopes exp =
   in
   let loc = of_location ~scopes exp.exp_loc in
   Lprim(Praise Raise_regular, [event_after ~scopes exp
-    (Lprim(Pmakeblock(0, Immutable, None),
+    (Lprim(Pmakeblock(0, Immutable, None, Taglib.default),
           [slot;
            Lconst(Const_block(0,
               [Const_base(Const_string (fname, exp.exp_loc, None));
                Const_base(Const_int line);
-               Const_base(Const_int char)]))], loc))], loc)
+               Const_base(Const_int char)], Taglib.default))], loc))], loc)
 
 let rec cut n l =
   if n = 0 then ([],l) else
   match l with [] -> failwith "Translcore.cut"
   | a::l -> let (l1,l2) = cut (n-1) l in (a::l1,l2)
+
+(* Generation of tag descriptors *)
+
+let current_constructor_name = ref ""
+
+let approx_exp_list el =
+  Array.of_list (List.map (fun e -> Typeopt.approx e.exp_env e.exp_type) el)
 
 (* Translation of expressions *)
 
@@ -318,13 +325,15 @@ and transl_exp0 ~in_new_scope ~scopes e =
                  (transl_cases_try ~scopes pat_expr_list))
   | Texp_tuple el ->
       let ll, shape = transl_list_with_shape ~scopes el in
+      let tagl = Taglib.make_tuple 0 "" (approx_exp_list el) in
       begin try
-        Lconst(Const_block(0, List.map extract_constant ll))
+        Lconst(Const_block(0, List.map extract_constant ll, tagl))
       with Not_constant ->
-        Lprim(Pmakeblock(0, Immutable, Some shape), ll,
+        Lprim(Pmakeblock(0, Immutable, Some shape, tagl), ll,
               (of_location ~scopes e.exp_loc))
       end
   | Texp_construct(_, cstr, args) ->
+      current_constructor_name := cstr.cstr_name;
       let ll, shape = transl_list_with_shape ~scopes args in
       if cstr.cstr_inlined <> None then begin match ll with
         | [x] -> x
@@ -335,10 +344,11 @@ and transl_exp0 ~in_new_scope ~scopes e =
       | Cstr_unboxed ->
           (match ll with [v] -> v | _ -> assert false)
       | Cstr_block n ->
+          let tagl = Taglib.make_tuple n cstr.cstr_name (approx_exp_list args) in
           begin try
-            Lconst(Const_block(n, List.map extract_constant ll))
+            Lconst(Const_block(n, List.map extract_constant ll, tagl))
           with Not_constant ->
-            Lprim(Pmakeblock(n, Immutable, Some shape), ll,
+            Lprim(Pmakeblock(n, Immutable, Some shape, tagl), ll,
                   of_location ~scopes e.exp_loc)
           end
       | Cstr_extension(path, is_const) ->
@@ -346,7 +356,7 @@ and transl_exp0 ~in_new_scope ~scopes e =
                       (of_location ~scopes e.exp_loc) e.exp_env path in
           if is_const then lam
           else
-            Lprim(Pmakeblock(0, Immutable, Some (Pgenval :: shape)),
+            Lprim(Pmakeblock(0, Immutable, Some (Pgenval :: shape), Taglib.default),
                   lam :: ll, of_location ~scopes e.exp_loc)
       end
   | Texp_extension_constructor (_, path) ->
@@ -354,14 +364,17 @@ and transl_exp0 ~in_new_scope ~scopes e =
   | Texp_variant(l, arg) ->
       let tag = Btype.hash_variant l in
       begin match arg with
-        None -> Lconst(const_int tag)
+        None ->
+          Taglib.register_polymorphic_variant l;
+          Lconst(const_int tag)
       | Some arg ->
           let lam = transl_exp ~scopes arg in
+          let tagl = Taglib.make_polymorphic_variant l in
           try
             Lconst(Const_block(0, [const_int tag;
-                                   extract_constant lam]))
+                                   extract_constant lam], tagl))
           with Not_constant ->
-            Lprim(Pmakeblock(0, Immutable, None),
+            Lprim(Pmakeblock(0, Immutable, None, tagl),
                   [Lconst(const_int tag); lam],
                   of_location ~scopes e.exp_loc)
       end
@@ -398,6 +411,13 @@ and transl_exp0 ~in_new_scope ~scopes e =
   | Texp_array expr_list ->
       let kind = array_kind e in
       let ll = transl_list ~scopes expr_list in
+      let tagl =
+        let approx = match expr_list with
+          | [] -> Taglib.Any
+          | x :: _ -> Typeopt.approx x.exp_env x.exp_type
+        in
+        Taglib.make_array approx
+      in
       begin try
         (* For native code the decision as to which compilation strategy to
            use is made later.  This enables the Flambda passes to lift certain
@@ -422,7 +442,7 @@ and transl_exp0 ~in_new_scope ~scopes e =
                When not [Pfloatarray], the exception propagates to the handler
                below. *)
             let imm_array =
-              Lprim (Pmakearray (kind, Immutable), ll,
+              Lprim (Pmakearray (kind, Immutable, tagl), ll,
                      of_location ~scopes e.exp_loc)
             in
             Lprim (Pduparray (kind, Mutable), [imm_array],
@@ -431,7 +451,7 @@ and transl_exp0 ~in_new_scope ~scopes e =
             let imm_array =
               match kind with
               | Paddrarray | Pintarray ->
-                  Lconst(Const_block(0, cl))
+                  Lconst(Const_block(0, cl, tagl))
               | Pfloatarray ->
                   Lconst(Const_float_array(List.map extract_float cl))
               | Pgenarray ->
@@ -441,7 +461,7 @@ and transl_exp0 ~in_new_scope ~scopes e =
                    of_location ~scopes e.exp_loc)
         end
       with Not_constant ->
-        Lprim(Pmakearray (kind, Mutable), ll,
+        Lprim(Pmakearray (kind, Mutable, tagl), ll,
               of_location ~scopes e.exp_loc)
       end
   | Texp_ifthenelse(cond, ifso, Some ifnot) ->
@@ -567,7 +587,7 @@ and transl_exp0 ~in_new_scope ~scopes e =
           (* We don't need to wrap with Popaque: this forward
              block will never be shortcutted since it points to a float
              and Config.flat_float_array is true. *)
-          Lprim(Pmakeblock(Obj.forward_tag, Immutable, None),
+          Lprim(Pmakeblock(Obj.forward_tag, Immutable, None, Taglib.default),
                 [transl_exp ~scopes e], of_location ~scopes e.exp_loc)
       | `Identifier `Forward_value ->
          (* CR-someday mshinwell: Consider adding a new primitive
@@ -577,7 +597,7 @@ and transl_exp0 ~in_new_scope ~scopes e =
             block doesn't really match what is going on here.  This
             value may subsequently turn into an immediate... *)
          Lprim (Popaque,
-                [Lprim(Pmakeblock(Obj.forward_tag, Immutable, None),
+                [Lprim(Pmakeblock(Obj.forward_tag, Immutable, None, Taglib.default),
                        [transl_exp ~scopes e],
                        of_location ~scopes e.exp_loc)],
                 of_location ~scopes e.exp_loc)
@@ -591,7 +611,7 @@ and transl_exp0 ~in_new_scope ~scopes e =
                             ~attr:default_function_attribute
                             ~loc:(of_location ~scopes e.exp_loc)
                             ~body:(transl_exp ~scopes e) in
-          Lprim(Pmakeblock(Config.lazy_tag, Mutable, None), [fn],
+          Lprim(Pmakeblock(Config.lazy_tag, Mutable, None, Taglib.default), [fn],
                 of_location ~scopes e.exp_loc)
       end
   | Texp_object (cs, meths) ->
@@ -934,6 +954,24 @@ and transl_setinstvar ~scopes loc self var expr =
 
 and transl_record ~scopes loc env fields repres opt_init_expr =
   let size = Array.length fields in
+  let tagdesc =
+    let fields = Array.map (fun (desc,expr) ->
+        let approx = match expr with
+          | Typedtree.Kept texpr -> Typeopt.approx env texpr
+          | Typedtree.Overridden (_, expr) ->
+              Typeopt.approx expr.exp_env expr.exp_type
+        in
+        (desc.Types.lbl_name, approx)) fields
+    in
+    match repres with
+    | Record_regular -> Taglib.make_record 0 "" fields
+    | Record_inlined tag ->
+        Taglib.make_record tag !current_constructor_name fields
+    | Record_extension _ ->
+        Taglib.make_record Obj.object_tag !current_constructor_name fields
+    | Record_float -> Taglib.make_record Obj.double_array_tag "" fields
+    | Record_unboxed _ -> Taglib.default
+  in
   (* Determine if there are "enough" fields (only relevant if this is a
      functional-style record update *)
   let no_init = match opt_init_expr with None -> true | _ -> false in
@@ -974,8 +1012,8 @@ and transl_record ~scopes loc env fields repres opt_init_expr =
         if mut = Mutable then raise Not_constant;
         let cl = List.map extract_constant ll in
         match repres with
-        | Record_regular -> Lconst(Const_block(0, cl))
-        | Record_inlined tag -> Lconst(Const_block(tag, cl))
+        | Record_regular -> Lconst(Const_block(0, cl, tagdesc))
+        | Record_inlined tag -> Lconst(Const_block(tag, cl, tagdesc))
         | Record_unboxed _ -> Lconst(match cl with [v] -> v | _ -> assert false)
         | Record_float ->
             Lconst(Const_float_array(List.map extract_float cl))
@@ -985,15 +1023,15 @@ and transl_record ~scopes loc env fields repres opt_init_expr =
         let loc = of_location ~scopes loc in
         match repres with
           Record_regular ->
-            Lprim(Pmakeblock(0, mut, Some shape), ll, loc)
+            Lprim(Pmakeblock(0, mut, Some shape, tagdesc), ll, loc)
         | Record_inlined tag ->
-            Lprim(Pmakeblock(tag, mut, Some shape), ll, loc)
+            Lprim(Pmakeblock(tag, mut, Some shape, tagdesc), ll, loc)
         | Record_unboxed _ -> (match ll with [v] -> v | _ -> assert false)
         | Record_float ->
-            Lprim(Pmakearray (Pfloatarray, mut), ll, loc)
+            Lprim(Pmakearray (Pfloatarray, mut, tagdesc), ll, loc)
         | Record_extension path ->
             let slot = transl_extension_path loc env path in
-            Lprim(Pmakeblock(0, mut, Some (Pgenval :: shape)), slot :: ll, loc)
+            Lprim(Pmakeblock(0, mut, Some (Pgenval :: shape), tagdesc), slot :: ll, loc)
     in
     begin match opt_init_expr with
       None -> lam
