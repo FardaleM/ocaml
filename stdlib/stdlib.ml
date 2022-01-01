@@ -629,6 +629,7 @@ module Stream       = Stream
 module String       = String
 module StringLabels = StringLabels
 module Sys          = Sys
+module Tagprinter   = Tagprinter
 module Uchar        = Uchar
 module Unit         = Unit
 module Weak         = Weak
