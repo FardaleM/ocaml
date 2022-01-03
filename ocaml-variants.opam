@@ -1,7 +1,8 @@
 opam-version: "2.0"
 version: "5.0.0+trunk"
+version: "5.0.0+trunk+tagl"
 license: "LGPL-2.1-or-later WITH OCaml-LGPL-linking-exception"
-synopsis: "OCaml development version"
+synopsis: "OCaml development version with runtime tag information"
 depends: [
   "ocaml" {= "5.0.0" & post}
   "base-unix" {post}
@@ -21,6 +22,7 @@ build: [
     "--disable-flat-float-array" {ocaml-option-no-flat-float-array:installed}
     "--enable-flambda" {ocaml-option-flambda:installed}
     "--enable-frame-pointers" {ocaml-option-fp:installed}
+    "--enable-reserved-header-bits=26" {ocaml-option-tagl}
     "CC=cc" {!ocaml-option-32bit:installed & !ocaml-option-musl:installed & (os="openbsd"|os="macos")}
     "CC=musl-gcc" {ocaml-option-musl:installed & os-distribution!="alpine"}
     "CFLAGS=-Os" {ocaml-option-musl:installed}
@@ -66,3 +68,4 @@ authors: [
   "Didier Rémy"
   "Jérôme Vouillon"
 ]
+available: arch = "x86_64" & (os = "linux" | os = "macos" | os = "win32")
