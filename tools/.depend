@@ -87,6 +87,7 @@ lintapidiff.cmx : \
 make_opcodes.cmo :
 make_opcodes.cmx :
 objinfo.cmo : \
+    ../lambda/taglib.cmi \
     ../bytecomp/symtable.cmi \
     ../middle_end/symbol.cmi \
     ../typing/shape.cmi \
@@ -104,6 +105,7 @@ objinfo.cmo : \
     ../bytecomp/bytesections.cmi \
     ../utils/binutils.cmi
 objinfo.cmx : \
+    ../lambda/taglib.cmx \
     ../bytecomp/symtable.cmx \
     ../middle_end/symbol.cmx \
     ../typing/shape.cmx \

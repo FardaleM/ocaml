@@ -571,6 +571,7 @@ source.cmx : \
     source.cmi
 source.cmi :
 symbols.cmo : \
+    ../lambda/taglib.cmi \
     ../bytecomp/symtable.cmi \
     program_loading.cmi \
     ../utils/misc.cmi \
@@ -582,6 +583,7 @@ symbols.cmo : \
     ../bytecomp/bytesections.cmi \
     symbols.cmi
 symbols.cmx : \
+    ../lambda/taglib.cmx \
     ../bytecomp/symtable.cmx \
     program_loading.cmx \
     ../utils/misc.cmx \
@@ -593,6 +595,7 @@ symbols.cmx : \
     ../bytecomp/bytesections.cmx \
     symbols.cmi
 symbols.cmi : \
+    ../lambda/taglib.cmi \
     ../bytecomp/instruct.cmi \
     events.cmi \
     debugcom.cmi

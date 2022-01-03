@@ -746,22 +746,27 @@ stdlib__Sys.cmx : sys.ml \
 stdlib__Sys.cmi : sys.mli
 stdlib__Tagprinter.cmo : tagprinter.ml \
     stdlib__Sys.cmi \
+    stdlib__String.cmi \
     stdlib__Obj.cmi \
     stdlib__List.cmi \
     stdlib__Hashtbl.cmi \
+    stdlib__Format.cmi \
     stdlib__Char.cmi \
     stdlib__Array.cmi \
     stdlib__Tagprinter.cmi
 stdlib__Tagprinter.cmx : tagprinter.ml \
     stdlib__Sys.cmx \
+    stdlib__String.cmx \
     stdlib__Obj.cmx \
     stdlib__List.cmx \
     stdlib__Hashtbl.cmx \
+    stdlib__Format.cmx \
     stdlib__Char.cmx \
     stdlib__Array.cmx \
     stdlib__Tagprinter.cmi
 stdlib__Tagprinter.cmi : tagprinter.mli \
-    stdlib__Obj.cmi
+    stdlib__Obj.cmi \
+    stdlib__Format.cmi
 stdlib__Uchar.cmo : uchar.ml \
     stdlib.cmi \
     stdlib__Char.cmi \
