@@ -1,7 +1,7 @@
 opam-version: "2.0"
-version: "4.14.0"
+version: "4.14.0+tagl"
 license: "LGPL-2.1-or-later WITH OCaml-LGPL-linking-exception"
-synopsis: "Official release of OCaml 4.14.0"
+synopsis: "OCaml 4.14.0 with runtime tag information"
 depends: [
   "ocaml" {= "4.14.0" & post}
   "base-unix" {post}
@@ -11,7 +11,7 @@ depends: [
 conflict-class: "ocaml-core-compiler"
 flags: compiler
 build: [
-  ["./configure" "--prefix=%{prefix}%" "--docdir=%{doc}%/ocaml"]
+  ["./configure" "--prefix=%{prefix}%" "--enable-reserved-header-bits=26"]
   [make "-j%{jobs}%"]
 ]
 install: [make "install"]
@@ -26,3 +26,4 @@ authors: [
   "Didier Rémy"
   "Jérôme Vouillon"
 ]
+available: arch = "x86_64" & (os = "linux" | os = "macos" | os = "win32")
