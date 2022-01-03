@@ -251,6 +251,11 @@ let make_startup_file ~ppf_dump units_list ~crc_interfaces =
       (Cmm_helpers.code_segment_table("_hot" :: "_startup" :: name_list))
   else
     compile_phrase(Cmm_helpers.code_segment_table("_startup" :: name_list));
+  compile_phrase
+    (Cmm_helpers.globals_taglib
+       (List.sort_uniq compare
+          (List.concat
+             (List.map (fun (unit,_,_) -> unit.ui_tagl) units_list))));
   let all_names = "_startup" :: "_system" :: name_list in
   compile_phrase (Cmm_helpers.frame_table all_names);
   if !Clflags.output_complete_object then
