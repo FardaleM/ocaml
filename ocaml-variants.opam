@@ -1,6 +1,6 @@
 opam-version: "2.0"
-version: "4.13.1"
-synopsis: "OCaml 4.13.1"
+version: "4.13.1+tagl"
+synopsis: "OCaml 4.13.1 with runtime tag information"
 depends: [
   "ocaml" {= "4.13.1" & post}
   "base-unix" {post}
@@ -11,7 +11,7 @@ conflict-class: "ocaml-core-compiler"
 flags: compiler
 setenv: CAML_LD_LIBRARY_PATH = "%{lib}%/stublibs"
 build: [
-  ["./configure" "--prefix=%{prefix}%"]
+  ["./configure" "--prefix=%{prefix}%" "--enable-reserved-header-bits=26"]
   [make "-j%{jobs}%"]
 ]
 install: [make "install"]
@@ -26,3 +26,4 @@ authors: [
   "Didier Rémy"
   "Jérôme Vouillon"
 ]
+available: arch = "x86_64" & (os = "linux" | os = "macos" | os = "win32")
