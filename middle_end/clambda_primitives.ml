@@ -33,7 +33,7 @@ type memory_access_size =
 type primitive =
   | Pread_symbol of string
   (* Operations on heap blocks *)
-  | Pmakeblock of int * mutable_flag * block_shape
+  | Pmakeblock of int * mutable_flag * block_shape * Taglib.t
   | Pfield of int * immediate_or_pointer * mutable_flag
   | Pfield_computed
   | Psetfield of int * immediate_or_pointer * initialization_or_assignment
@@ -70,7 +70,7 @@ type primitive =
   | Pstringlength | Pstringrefu  | Pstringrefs
   | Pbyteslength | Pbytesrefu | Pbytessetu | Pbytesrefs | Pbytessets
   (* Array operations *)
-  | Pmakearray of array_kind * mutable_flag
+  | Pmakearray of array_kind * mutable_flag * Taglib.t
   | Pduparray of array_kind * mutable_flag
   (** For [Pduparray], the argument must be an immutable array.
       The arguments of [Pduparray] give the kind and mutability of the

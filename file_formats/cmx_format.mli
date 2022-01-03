@@ -45,7 +45,9 @@ type unit_infos =
     mutable ui_apply_fun: int list;       (* Apply functions needed *)
     mutable ui_send_fun: int list;        (* Send functions needed *)
     mutable ui_export_info: export_info;
-    mutable ui_force_link: bool }         (* Always linked *)
+    mutable ui_force_link: bool;          (* Always linked *)
+    mutable ui_tagl : Taglib.t list;
+  }
 
 (* Each .a library has a matching .cmxa file that provides the following
    infos on the library: *)

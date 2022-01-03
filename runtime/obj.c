@@ -360,6 +360,8 @@ CAMLprim value caml_obj_set_profinfo(value obj, value tag)
 #include "caml/sys.h"
 #include "caml/io.h"
 #include "caml/intext.h"
+#include "caml/stack.h"
+#include <limits.h>
 
 #ifndef NATIVE_CODE
 
@@ -399,8 +401,8 @@ CAMLprim value caml_read_tag_section(value unit)
 
 CAMLprim value caml_read_tag_section(value unit)
 {
-  //return caml_input_value_from_block(caml_globals_taglib, INT_MAX);
-  return Val_unit;
+  return caml_input_value_from_block(caml_globals_taglib, INT_MAX);
+  //return Val_unit;
 }
 
 #endif

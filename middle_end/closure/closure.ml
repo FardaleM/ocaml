@@ -456,7 +456,7 @@ let simplif_arith_prim_pure ~backend fpc p (args, approxs) dbg =
 
 let field_approx n = function
   | Value_tuple a when n < Array.length a -> a.(n)
-  | Value_const (Uconst_ref(_, Some (Uconst_block(_, l))))
+  | Value_const (Uconst_ref(_, Some (Uconst_block(_, l, _))))
     when n < List.length l ->
       Value_const (List.nth l n)
   | _ -> Value_unknown
@@ -465,13 +465,13 @@ let simplif_prim_pure ~backend fpc p (args, approxs) dbg =
   let open Clambda_primitives in
   match p, args, approxs with
   (* Block construction *)
-  | Pmakeblock(tag, Immutable, _kind), _, _ ->
+  | Pmakeblock(tag, Immutable, _kind, tagdesc), _, _ ->
       let field = function
         | Value_const c -> c
         | _ -> raise Exit
       in
       begin try
-        let cst = Uconst_block (tag, List.map field approxs) in
+        let cst = Uconst_block (tag, List.map field approxs, tagdesc) in
         let name =
           Compilenv.new_structured_constant cst ~shared:true
         in
@@ -481,7 +481,7 @@ let simplif_prim_pure ~backend fpc p (args, approxs) dbg =
       end
   (* Field access *)
   | Pfield (n, _, _), _,
-            [ Value_const(Uconst_ref(_, Some (Uconst_block(_, l)))) ]
+            [ Value_const(Uconst_ref(_, Some (Uconst_block(_, l, _)))) ]
     when n < List.length l ->
       make_const (List.nth l n)
   | Pfield(n, _, _), [ Uprim(P.Pmakeblock _, ul, _) ], [approx]
@@ -517,7 +517,7 @@ let simplif_prim ~backend fpc p (args, approxs as args_approxs) dbg =
     (* XXX : always return the same approxs as simplif_prim_pure? *)
     let approx =
       match p with
-      | P.Pmakeblock(_, Immutable, _kind) ->
+      | P.Pmakeblock(_, Immutable, _kind, _) ->
           Value_tuple (Array.of_list approxs)
       | _ ->
           Value_unknown
@@ -613,7 +613,7 @@ let rec substitute loc ((backend, fpc) as st) sb rn ulam =
            in this substitute function.
         *)
         match sarg with
-        | Uconst (Uconst_ref (_,  Some (Uconst_block (tag, _)))) ->
+        | Uconst (Uconst_ref (_,  Some (Uconst_block (tag, _, _)))) ->
             find_action sw.us_index_blocks sw.us_actions_blocks tag
         | Uconst (Uconst_int tag) ->
             find_action sw.us_index_consts sw.us_actions_consts tag
@@ -756,13 +756,13 @@ let bind_params { backend; mutable_vars; _ } loc fdesc params args funct body =
           let p1' = VP.rename p1 in
           let u1, u2 =
             match VP.name p1, a1 with
-            | "*opt*", Uprim(P.Pmakeblock(0, Immutable, kind), [a], dbg) ->
+            | "*opt*", Uprim(P.Pmakeblock(0, Immutable, kind, td), [a], dbg) ->
                 (* This parameter corresponds to an optional parameter,
                    and although it is used twice pushing the expression down
                    actually allows us to remove the allocation as it will
                    appear once under a Pisint primitive and once under a Pfield
                    primitive (see [simplif_prim_pure]) *)
-                a, Uprim(P.Pmakeblock(0, Immutable, kind),
+                a, Uprim(P.Pmakeblock(0, Immutable, kind, td),
                          [Uvar (VP.var p1')], dbg)
             | _ ->
                 a1, Uvar (VP.var p1')
@@ -906,8 +906,8 @@ let rec close ({ backend; fenv; cenv ; mutable_vars } as env) lam =
       let rec transl = function
         | Const_base(Const_int n) -> Uconst_int n
         | Const_base(Const_char c) -> Uconst_int (Char.code c)
-        | Const_block (tag, fields, _tagl) ->
-            str (Uconst_block (tag, List.map transl fields))
+        | Const_block (tag, fields, tagdesc) ->
+            str (Uconst_block (tag, List.map transl fields, tagdesc))
         | Const_float_array sl ->
             (* constant float arrays are really immutable *)
             str (Uconst_float_array (List.map float_of_string sl))
@@ -1115,7 +1115,8 @@ let rec close ({ backend; fenv; cenv ; mutable_vars } as env) lam =
       let dbg = Debuginfo.from_location loc in
       (Uprim(P.Praise k, [ulam], dbg),
        Value_unknown)
-  | Lprim (Pmakearray _, [], _loc) -> make_const_ref (Uconst_block (0, []))
+  | Lprim (Pmakearray _, [], _loc) ->
+      make_const_ref (Uconst_block (0, [], Taglib.default))
   | Lprim(p, args, loc) ->
       let p = Convert_primitives.convert p in
       let dbg = Debuginfo.from_location loc in
@@ -1458,7 +1459,7 @@ let collect_exported_structured_constants a =
     | Uconst_ref (_s, None) -> assert false (* Cannot be generated *)
     | Uconst_int _ -> ()
   and structured_constant = function
-    | Uconst_block (_, ul) -> List.iter const ul
+    | Uconst_block (_, ul, _) -> List.iter const ul
     | Uconst_float _ | Uconst_int32 _
     | Uconst_int64 _ | Uconst_nativeint _
     | Uconst_float_array _ | Uconst_string _ -> ()

@@ -74,6 +74,7 @@
 /* Declaration of variables used in the asm code */
 extern value * caml_globals[];
 extern intnat caml_globals_inited;
+extern char caml_globals_taglib[];
 
 #endif /* CAML_INTERNALS */
 

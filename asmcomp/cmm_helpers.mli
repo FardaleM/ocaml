@@ -38,26 +38,26 @@ val floatarray_tag : Debuginfo.t -> expression
 
 (** [block_header tag size] creates a header with tag [tag] for a
     block of size [size] *)
-val block_header : int -> int -> nativeint
+val block_header : ?desc:Taglib.t -> int -> int -> nativeint
 
 (** Same as block_header, but with GC bits set to black *)
-val black_block_header : int -> int -> nativeint
+val black_block_header : ?desc:Taglib.t -> int -> int -> nativeint
 
 (** Closure headers of the given size *)
-val white_closure_header : int -> nativeint
-val black_closure_header : int -> nativeint
+val white_closure_header : ?desc:Taglib.t -> int -> nativeint
+val black_closure_header : ?desc:Taglib.t -> int -> nativeint
 
 (** Infix header at the given offset *)
-val infix_header : int -> nativeint
+val infix_header : ?desc:Taglib.t -> int -> nativeint
 
 (** Header for a boxed float value *)
 val float_header : nativeint
 
 (** Header for an unboxed float array of the given size *)
-val floatarray_header : int -> nativeint
+val floatarray_header : ?desc:Taglib.t -> int -> nativeint
 
 (** Header for a string (or bytes) of the given length *)
-val string_header : int -> nativeint
+val string_header : ?desc:Taglib.t -> int -> nativeint
 
 (** Boxed integer headers *)
 val boxedint32_header : nativeint
@@ -69,9 +69,9 @@ val closure_info : arity:int -> startenv:int -> nativeint
 
 (** Wrappers *)
 val alloc_float_header : Debuginfo.t -> expression
-val alloc_floatarray_header : int -> Debuginfo.t -> expression
-val alloc_closure_header : int -> Debuginfo.t -> expression
-val alloc_infix_header : int -> Debuginfo.t -> expression
+val alloc_floatarray_header : ?desc:Taglib.t -> int -> Debuginfo.t -> expression
+val alloc_closure_header : ?desc:Taglib.t -> int -> Debuginfo.t -> expression
+val alloc_infix_header : ?desc:Taglib.t -> int -> Debuginfo.t -> expression
 val alloc_closure_info :
       arity:int -> startenv:int -> Debuginfo.t -> expression
 val alloc_boxedint32_header : Debuginfo.t -> expression
@@ -305,10 +305,10 @@ val call_cached_method :
 (** Allocations *)
 
 (** Allocate a block of regular values with the given tag *)
-val make_alloc : Debuginfo.t -> int -> expression list -> expression
+val make_alloc : ?desc:Taglib.t -> Debuginfo.t -> int -> expression list -> expression
 
 (** Allocate a block of unboxed floats with the given tag *)
-val make_float_alloc : Debuginfo.t -> int -> expression list -> expression
+val make_float_alloc : ?desc:Taglib.t -> Debuginfo.t -> int -> expression list -> expression
 
 (** Bounds checking *)
 
@@ -660,3 +660,5 @@ val emit_constant_closure :
 
 val emit_preallocated_blocks :
   Clambda.preallocated_block list -> phrase list -> phrase list
+
+val globals_taglib: Obj.Tag_descriptor.t list -> Cmm.phrase

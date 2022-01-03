@@ -57,9 +57,9 @@ let primitive ppf (prim:Clambda_primitives.primitive) =
   match prim with
   | Pread_symbol sym ->
       fprintf ppf "read_symbol %s" sym
-  | Pmakeblock(tag, Immutable, shape) ->
+  | Pmakeblock(tag, Immutable, shape, _tagdesc) ->
       fprintf ppf "makeblock %i%a" tag Printlambda.block_shape shape
-  | Pmakeblock(tag, Mutable, shape) ->
+  | Pmakeblock(tag, Mutable, shape, _tagdesc) ->
       fprintf ppf "makemutable %i%a" tag Printlambda.block_shape shape
   | Pfield(n, ptr, mut) ->
       let instr =
@@ -155,8 +155,8 @@ let primitive ppf (prim:Clambda_primitives.primitive) =
   | Pbytessets -> fprintf ppf "bytes.set"
 
   | Parraylength k -> fprintf ppf "array.length[%s]" (array_kind k)
-  | Pmakearray (k, Mutable) -> fprintf ppf "makearray[%s]" (array_kind k)
-  | Pmakearray (k, Immutable) -> fprintf ppf "makearray_imm[%s]" (array_kind k)
+  | Pmakearray (k, Mutable, _) -> fprintf ppf "makearray[%s]" (array_kind k)
+  | Pmakearray (k, Immutable, _) -> fprintf ppf "makearray_imm[%s]" (array_kind k)
   | Pduparray (k, Mutable) -> fprintf ppf "duparray[%s]" (array_kind k)
   | Pduparray (k, Immutable) -> fprintf ppf "duparray_imm[%s]" (array_kind k)
   | Parrayrefu k -> fprintf ppf "array.unsafe_get[%s]" (array_kind k)
