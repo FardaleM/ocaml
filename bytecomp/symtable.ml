@@ -228,7 +228,7 @@ let rec transl_const = function
   | Const_immstring s -> Obj.repr s
   | Const_block(tag, fields, tagl) ->
       let block = Obj.new_block tag (List.length fields) in
-      assert (Obj.set_profinfo block (Taglib.index tagl));
+      ignore (Obj.set_profinfo block (Taglib.index tagl) : bool);
       List.iteri (fun pos c -> Obj.set_field block pos (transl_const c))
         fields;
       block
