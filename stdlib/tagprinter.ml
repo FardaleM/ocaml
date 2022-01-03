@@ -218,3 +218,78 @@ module Introspect = struct
 
   let self_dynval dynobj = dynval (Index.self_index ()) dynobj
 end
+
+open Format
+
+let rec print_record ppf fields =
+  for i = 0 to Introspect.field_count fields - 1 do
+    let name, value = Introspect.field_get fields i in
+    fprintf ppf "@[%s = %a@];@ " name pp_dynobj value
+  done
+
+and print_fields sep ppf fields =
+  for i = 0 to Introspect.field_count fields - 1 do
+    let value = Introspect.field_get fields i in
+    if i > 0 then fprintf ppf "%s@ " sep;
+    fprintf ppf "@[%a@]" pp_dynobj value
+  done
+
+and pp_dynval ppf : Introspect.dynval -> _ = function
+  | Introspect.String s ->
+      fprintf ppf "%S" s
+  | Introspect.Float f ->
+      fprintf ppf "%f" f
+  | Introspect.Char c ->
+      fprintf ppf "%C" c
+  | Introspect.Int_or_constant (i, keys) ->
+      fprintf ppf "%d" i;
+      List.iter (fprintf ppf " or %s") keys
+  | Introspect.Constant names ->
+      fprintf ppf "%s" (String.concat " or " names)
+  | Introspect.Array arr ->
+      fprintf ppf "[|@[<hv>%a@]|]" (print_fields ";") arr
+  | Introspect.Tuple { name ="::"; fields } when Introspect.field_count fields = 2 ->
+      fprintf ppf "[@[<hv>%a@]]" (print_list true) fields
+  | Introspect.Tuple { name; fields } ->
+      fprintf ppf "%s(@[<hv>%a@])"
+        name (print_fields ",") fields
+  | Introspect.Record {name; fields} ->
+      fprintf ppf "%s{@[<hv>%a@]}" name print_record fields
+  | Introspect.Polymorphic_variant (name, payload) ->
+      fprintf ppf "`%s(@[<hv>%a@])" name pp_dynobj payload
+  | Introspect.Closure  -> fprintf ppf "<Closure>"
+  | Introspect.Lazy     -> fprintf ppf "<Lazy>"
+  | Introspect.Abstract -> fprintf ppf "<Abstract>"
+  | Introspect.Custom   -> fprintf ppf "<Custom>"
+  | Introspect.Unknown  -> fprintf ppf "<Unknown>"
+
+and print_list first ppf fields =
+  if not first then fprintf ppf ";@ ";
+  let car = Introspect.field_get fields 0 in
+  let cdr = Introspect.field_get fields 1 in
+  fprintf ppf "%a" pp_dynobj car;
+  match Introspect.self_dynval cdr with
+  | Introspect.Constant ["[]"]
+  | Introspect.Int_or_constant (0, _) -> ()
+  | Introspect.Tuple {name = "::"; fields}
+    when Introspect.field_count fields = 2 ->
+      print_list false ppf fields
+  | _ -> fprintf ppf "<malformed list>"
+
+and pp_dynobj ppf obj =
+  pp_dynval ppf (Introspect.self_dynval obj)
+
+let format_any ppf obj =
+  pp_dynobj ppf (Introspect.lift (Obj.repr obj))
+
+let print_any obj =
+  fprintf Format.std_formatter "%a%!" format_any obj
+
+let prerr_any obj =
+  fprintf Format.err_formatter "%a%!" format_any obj
+
+let print_any_endline obj =
+  fprintf Format.std_formatter "%a\n%!" format_any obj
+
+let prerr_any_endline obj =
+  fprintf Format.err_formatter "%a\n%!" format_any obj
