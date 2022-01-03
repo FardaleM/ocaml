@@ -79,3 +79,10 @@ module Introspect : sig
   (* Introspect an object [Index.self_index] *)
   val self_dynval : dynobj -> dynval
 end
+
+val format_any : Format.formatter -> 'a -> unit
+
+val print_any : 'a -> unit
+val prerr_any : 'a -> unit
+val print_any_endline : 'a -> unit
+val prerr_any_endline : 'a -> unit
