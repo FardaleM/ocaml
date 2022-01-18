@@ -47,6 +47,7 @@ let floatarray_tag dbg = Cconst_int (Obj.double_array_tag, dbg)
 let block_header profinfo tag sz =
   let header_tag = Nativeint.of_int tag in
   let header_sz = Nativeint.shift_left (Nativeint.of_int sz) 10 in
+  let profinfo = profinfo land ((1 lsl Config.profinfo_width) - 1) in
   let header_profinfo =
     Nativeint.shift_left (Nativeint.of_int profinfo)
       (64 - Config.profinfo_width)
