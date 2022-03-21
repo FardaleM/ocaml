@@ -204,6 +204,11 @@ stdlib__Digest.cmx : digest.ml \
     stdlib__Bytes.cmx \
     stdlib__Digest.cmi
 stdlib__Digest.cmi : digest.mli
+stdlib__Dump.cmo : dump.ml \
+    stdlib__Dump.cmi
+stdlib__Dump.cmx : dump.ml \
+    stdlib__Dump.cmi
+stdlib__Dump.cmi : dump.mli
 stdlib__Either.cmo : either.ml \
     stdlib__Either.cmi
 stdlib__Either.cmx : either.ml \
