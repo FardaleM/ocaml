@@ -1395,6 +1395,7 @@ module Callback     = Callback
 module Char         = Char
 module Complex      = Complex
 module Digest       = Digest
+module Dump         = Dump
 module Either       = Either
 module Ephemeron    = Ephemeron
 module Filename     = Filename
