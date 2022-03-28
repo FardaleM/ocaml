@@ -20,27 +20,32 @@
  * in the major heap
  */
 
+/* TODO use the function to darken all the reachable value in the dump */
+/* Take a ocaml string as input and dump heap in it */
 CAMLprim value caml_dump_chunks(value value_filename) {
   CAMLparam1(value_filename);
 
   // Compact memory first
-  //gc_compaction();
+  gc_compaction();
 
-  FILE *fp;
-  char *dump_chunk;
+  FILE *fp; // File of the dump
+  char *dump_chunk; // This will hold the pointer to a chunk of memory
 
   const char *filename = String_val(value_filename);
   fp = fopen(filename, "w");
 
-  dump_chunk = caml_heap_start;
+  dump_chunk = caml_heap_start; // The pointer to the firts chunk is caml_heap_start
   if (fp == NULL) {
     fprintf(stderr, "File can not be opened\n");
     return Val_unit;
   }
 
   while (dump_chunk != NULL) {
-    fwrite(Chunk_block(dump_chunk), (size_t)Bsize_wsize(1),
-           Chunk_size(dump_chunk), fp);
+    /* Dump from the start of the chunk using Chunk_block
+     * Chunk_size return the byte for the given chunk
+     */
+    printf("Printing a chunk\n");
+    fwrite(Chunk_block(dump_chunk), 1, Chunk_size(dump_chunk), fp);
     dump_chunk = Chunk_next(dump_chunk);
   }
 
@@ -55,7 +60,7 @@ void gc_compaction() {
   CAML_EV_BEGIN(EV_EXPLICIT_GC_COMPACT);
   caml_gc_message(0x10, "Heap dump requested\n");
   caml_empty_minor_heap();
-  caml_gc_message(0x1, "Full major GC cycle (compaction)\n");
+  caml_gc_message(0x1, "Full major GC cycle (dump)\n");
   caml_finish_major_cycle();
   // call finalisers
   exn = caml_process_pending_actions_exn();
@@ -64,6 +69,7 @@ void gc_compaction() {
   caml_empty_minor_heap();
   caml_finish_major_cycle();
   ++Caml_state->stat_forced_major_collections;
+  caml_gc_message(0x1, "Compaction (dump)\n");
   caml_compact_heap(-1);
   // call finalisers
   exn = caml_process_pending_actions_exn();
