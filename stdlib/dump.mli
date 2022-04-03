@@ -1,1 +1,1 @@
-external chunks : string -> unit = "caml_dump_chunks"
+external full : string -> unit = "caml_full_dump"
