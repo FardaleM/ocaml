@@ -15,6 +15,11 @@
 void dump_roots(value root, value *dummy);
 void dump_chunks();
 
+uintnat caml_dump_after_compact = 0;
+/* Control the dump after a compaction.
+   This is set when parsing [OCAMLRUNPARAM]
+*/
+
 static FILE *fp; // File of the dump
 
 /*
