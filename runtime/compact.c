@@ -19,6 +19,7 @@
 
 #include "caml/address_class.h"
 #include "caml/config.h"
+#include "caml/dump.h"
 #include "caml/finalise.h"
 #include "caml/freelist.h"
 #include "caml/gc.h"
@@ -458,6 +459,9 @@ void caml_compact_heap (intnat new_allocation_policy)
     CAMLassert (Caml_state->stat_heap_wsz == Wsize_bsize (Chunk_size (chunk)));
     CAML_EV_END(EV_COMPACT_RECOMPACT);
   }
+
+  // Dump after compact
+  caml_do_full_dump("/tmp/compact.dump");
 }
 
 void caml_compact_heap_maybe (double previous_overhead)
