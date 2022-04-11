@@ -11,7 +11,6 @@
 #include "caml/roots.h"
 #include "caml/signals.h"
 
-void gc_compaction();
 void dump_roots(value root, value *dummy);
 void dump_chunks();
 
@@ -25,7 +24,6 @@ static FILE *fp; // File of the dump
  * in the major heap
  */
 
-/* TODO use the function to darken all the reachable value in the dump */
 /* Take a ocaml string as input and dump the memory in it */
 CAMLprim value caml_full_dump(value value_filename) {
   CAMLparam1(value_filename);
@@ -40,9 +38,6 @@ CAMLprim value caml_full_dump(value value_filename) {
     return Val_unit;
   }
 
-  // Compact memory first
-  gc_compaction();
-
   // Dump the root
   caml_do_roots(dump_roots, 1);
 
@@ -56,7 +51,6 @@ CAMLprim value caml_full_dump(value value_filename) {
   return Val_unit;
 }
 
-// TODO dump address and length first
 void dump_chunks() {
   char *dump_chunk; // This will hold the pointer to a chunk of memory
 
@@ -83,43 +77,4 @@ void dump_roots(value root, value *dummy) {
 #endif
     fwrite(&root, Bsize_wsize(1), 1, fp);
   }
-}
-
-// Look at sweep_slice in major_gc.c to know how to do it
-CAMLprim value caml_show_tag(value v) {
-  CAMLassert(v == Val_unit);
-  char *chunk, *hp;
-  chunk = caml_heap_start;
-
-  while (chunk != NULL) {
-    hp = chunk;
-    chunk = Chunk_next(chunk);
-  }
-  return Val_unit;
-}
-
-// Copied from gc_ctrl.c
-void gc_compaction() {
-  value exn;
-
-  CAML_EV_BEGIN(EV_EXPLICIT_GC_COMPACT);
-  caml_gc_message(0x10, "Heap dump requested\n");
-  caml_empty_minor_heap();
-  caml_gc_message(0x1, "Full major GC cycle (dump)\n");
-  caml_finish_major_cycle();
-  // call finalisers
-  exn = caml_process_pending_actions_exn();
-  if (Is_exception_result(exn))
-    goto cleanup;
-  caml_empty_minor_heap();
-  caml_finish_major_cycle();
-  ++Caml_state->stat_forced_major_collections;
-  caml_gc_message(0x1, "Compaction (dump)\n");
-  caml_compact_heap(-1);
-  // call finalisers
-  exn = caml_process_pending_actions_exn();
-
-cleanup:
-  CAML_EV_END(EV_EXPLICIT_GC_COMPACT);
-  caml_raise_if_exception(exn);
 }
