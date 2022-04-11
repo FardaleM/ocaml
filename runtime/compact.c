@@ -461,7 +461,8 @@ void caml_compact_heap (intnat new_allocation_policy)
   }
 
   // Dump after compact
-  caml_do_full_dump("/tmp/compact.dump");
+  if (caml_dump_after_compact)
+      caml_do_full_dump("/tmp/compact.dump");
 }
 
 void caml_compact_heap_maybe (double previous_overhead)
