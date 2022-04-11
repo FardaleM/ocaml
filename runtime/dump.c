@@ -2,6 +2,7 @@
 #define CAML_INTERNALS
 
 #include "caml/compact.h"
+#include "caml/dump.h"
 #include "caml/eventlog.h"
 #include "caml/fail.h"
 #include "caml/major_gc.h"
@@ -24,7 +25,7 @@ static FILE *fp; // File of the dump
  * in the major heap
  */
 
-void caml_do_full_dump(const char* filename) {
+void caml_do_full_dump(const char *filename) {
   // Opening the file for the dump
   fp = fopen(filename, "w");
 
@@ -46,7 +47,6 @@ void caml_do_full_dump(const char* filename) {
   fclose(fp);
   return;
 }
-
 
 /* Take a ocaml string as input and dump the memory in it */
 CAMLprim value caml_full_dump(value value_filename) {
