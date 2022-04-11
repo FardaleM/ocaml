@@ -24,12 +24,8 @@ static FILE *fp; // File of the dump
  * in the major heap
  */
 
-/* Take a ocaml string as input and dump the memory in it */
-CAMLprim value caml_full_dump(value value_filename) {
-  CAMLparam1(value_filename);
-
+void caml_do_full_dump(const char* filename) {
   // Opening the file for the dump
-  const char *filename = String_val(value_filename);
   fp = fopen(filename, "w");
 
   // Check for error for the file
@@ -48,6 +44,19 @@ CAMLprim value caml_full_dump(value value_filename) {
   dump_chunks();
 
   fclose(fp);
+  return;
+}
+
+
+/* Take a ocaml string as input and dump the memory in it */
+CAMLprim value caml_full_dump(value value_filename) {
+  CAMLparam1(value_filename);
+
+  // Opening the file for the dump
+  const char *filename = String_val(value_filename);
+
+  caml_do_full_dump(filename);
+
   return Val_unit;
 }
 
