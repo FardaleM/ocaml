@@ -37,7 +37,7 @@ void caml_do_full_dump(const char *filename) {
   // Check for error for the file
   if (fp == NULL) {
     fprintf(stderr, "File can not be opened\n");
-    return Val_unit;
+    return;
   }
 
   // Dump the root
@@ -62,7 +62,7 @@ CAMLprim value caml_full_dump(value value_filename) {
 
   caml_do_full_dump(filename);
 
-  return Val_unit;
+  CAMLreturn(Val_unit);
 }
 
 void dump_chunks() {
