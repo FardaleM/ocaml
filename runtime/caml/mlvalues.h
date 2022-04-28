@@ -165,8 +165,8 @@ bits  63        (64-P) (63-P)        10 9     8 7   0
 #define Whsize_wosize(sz) ((sz) + 1)
 #define Wosize_whsize(sz) ((sz) - 1)
 #define Wosize_bhsize(sz) ((sz) / sizeof (value) - 1)
-#define Bsize_wsize(sz) ((sz) * sizeof (value))
-#define Wsize_bsize(sz) ((sz) / sizeof (value))
+#define Bsize_wsize(sz) ((sz) * sizeof (value)) /* Size in Byte from the size in Word */
+#define Wsize_bsize(sz) ((sz) / sizeof (value)) /* Size in Word from the size in Bytes */
 #define Bhsize_wosize(sz) (Bsize_wsize (Whsize_wosize (sz)))
 #define Bhsize_bosize(sz) ((sz) + sizeof (header_t))
 #define Bosize_val(val) (Bsize_wsize (Wosize_val (val)))
