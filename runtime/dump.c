@@ -14,10 +14,15 @@
 
 void dump_roots(value root, value *dummy);
 void dump_chunks();
+void dump_minor_heap();
 
 uintnat caml_dump_after_compact = 0;
 /* Control the dump after a compaction.
    This is set when parsing [OCAMLRUNPARAM]
+*/
+
+/* TODO
+ * Dump Caml_state?
 */
 
 static FILE *fp; // File of the dump
@@ -46,6 +51,8 @@ void caml_do_full_dump(const char *filename) {
   // NULL word to mark the end of the roots
   value null = 0;
   fwrite(&null, Bsize_wsize(1), 1, fp);
+
+  dump_minor_heap();
 
   dump_chunks();
 
@@ -81,6 +88,13 @@ void dump_chunks() {
     fwrite(Chunk_block(dump_chunk), 1, Chunk_size(dump_chunk), fp);
     dump_chunk = Chunk_next(dump_chunk);
   }
+}
+
+void dump_minor_heap() {
+  value size = caml_young_end - caml_young_start;
+  fwrite(&caml_young_start, Bsize_wsize(1), 1, fp);
+  fwrite(&size, Bsize_wsize(1), 1, fp);
+  fwrite(caml_young_start, 1, caml_young_end - caml_young_start, fp);
 }
 
 void dump_roots(value root, value *dummy) {
