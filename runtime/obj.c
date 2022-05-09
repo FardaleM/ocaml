@@ -349,7 +349,6 @@ CAMLprim value caml_obj_set_profinfo(value obj, value tag)
 
 CAMLprim value caml_read_tag_section(value unit)
 {
-  (void)unit;
   CAMLparam0();
   CAMLlocal1(library);
   char_os *exec_name;
@@ -391,7 +390,6 @@ CAMLprim value caml_read_tag_section(value unit)
 
 CAMLprim value caml_compiler_tags(value unit)
 {
-  (void)unit;
   static value tag_ref = 0;
 
   if (tag_ref == 0)
