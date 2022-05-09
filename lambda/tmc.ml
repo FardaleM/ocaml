@@ -119,7 +119,7 @@ end = struct
 
   let apply constr t =
     let block_args = List.append constr.before @@ t :: constr.after in
-    Lprim (Pmakeblock (constr.tag, constr.flag, constr.shape),
+    Lprim (Pmakeblock (constr.tag, constr.flag, constr.shape, Taglib.default), (*TODO: check this*)
            block_args, constr.loc)
 
   let tmc_placeholder =
@@ -738,7 +738,7 @@ let rec choice ctx t =
     let choices = List.map (choice ctx ~tail:false) blockargs in
     match Choice.find_nonambiguous_tmc_call choices with
     | Choice.No_tmc_call args ->
-        Choice.lambda @@ Lprim (Pmakeblock (tag, flag, shape), args, loc)
+        Choice.lambda @@ Lprim (Pmakeblock (tag, flag, shape, Taglib.default), args, loc) (*TODO: check this*)
     | Choice.Ambiguous { explicit; subterms = ambiguous_subterms } ->
         (* An ambiguous term should not lead to an error if it not
            used in TMC position. Consider for example:
@@ -775,7 +775,7 @@ let rec choice ctx t =
         *)
         let term_choice =
           let+ args = Choice.list choices in
-          Lprim (Pmakeblock(tag, flag, shape), args, loc)
+          Lprim (Pmakeblock(tag, flag, shape, Taglib.default), args, loc) (*TODO: check this*)
         in
         { term_choice with
           Choice.dps = Dps.make (fun ~tail:_ ~dst:_ ->
@@ -826,7 +826,7 @@ let rec choice ctx t =
   and choice_prim ctx ~tail prim primargs loc =
     match prim with
     (* The important case is the construction case *)
-    | Pmakeblock (tag, flag, shape) ->
+    | Pmakeblock (tag, flag, shape, _) -> (*TODO: check this*)
         choice_makeblock ctx ~tail (tag, flag, shape) primargs loc
 
     (* Some primitives have arguments in tail-position *)
