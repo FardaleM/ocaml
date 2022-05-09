@@ -23,7 +23,7 @@ uintnat caml_dump_after_compact = 0;
 
 /* TODO
  * Dump Caml_state?
-*/
+ */
 
 static FILE *fp; // File of the dump
 
@@ -36,6 +36,9 @@ static FILE *fp; // File of the dump
  */
 
 void caml_do_full_dump(const char *filename) {
+  value null;
+  null = 0;
+
   // Opening the file for the dump
   fp = fopen(filename, "w");
 
@@ -49,7 +52,6 @@ void caml_do_full_dump(const char *filename) {
   caml_do_roots(dump_roots, 1);
 
   // NULL word to mark the end of the roots
-  value null = 0;
   fwrite(&null, Bsize_wsize(1), 1, fp);
 
   dump_minor_heap();
