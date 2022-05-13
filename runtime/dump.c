@@ -1,5 +1,6 @@
-#include "caml/mlvalues.h"
 #define CAML_INTERNALS
+
+#include "caml/mlvalues.h"
 
 #include "caml/compact.h"
 #include "caml/dump.h"
@@ -15,6 +16,10 @@
 void dump_roots(value root, value *dummy);
 void dump_chunks();
 void dump_minor_heap();
+void dump_data();
+
+extern char etext, edata,
+    end; // Magic:https://stackoverflow.com/questions/1765969/where-are-the-symbols-etext-edata-and-end-defined
 
 uintnat caml_dump_after_compact = 0;
 /* Control the dump after a compaction.
@@ -58,6 +63,8 @@ void caml_do_full_dump(const char *filename) {
 
   dump_chunks();
 
+  dump_data();
+
   fclose(fp);
   return;
 }
@@ -96,7 +103,7 @@ void dump_minor_heap() {
   value size = caml_young_end - caml_young_start;
   fwrite(&caml_young_start, Bsize_wsize(1), 1, fp);
   fwrite(&size, Bsize_wsize(1), 1, fp);
-  fwrite(caml_young_start, 1, caml_young_end - caml_young_start, fp);
+  fwrite(caml_young_start, 1, size, fp);
 }
 
 void dump_roots(value root, value *dummy) {
@@ -107,4 +114,15 @@ void dump_roots(value root, value *dummy) {
 #endif
     fwrite(&root, Bsize_wsize(1), 1, fp);
   }
+}
+
+void dump_data() {
+  char *data_start;
+  char *data_end;
+  data_start = &etext;
+  data_end = &end;
+  value size = data_end - data_start;
+  fwrite(&data_start, Bsize_wsize(1), 1, fp);
+  fwrite(&size, Bsize_wsize(1), 1, fp);
+  fwrite(data_start, 1, size, fp);
 }
