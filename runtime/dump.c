@@ -1,3 +1,17 @@
+/**************************************************************************/
+/*                                                                        */
+/*                                 OCaml                                  */
+/*                                                                        */
+/*      Emmanuel Arrighi, Nomadic Labs                                    */
+/*                                                                        */
+/*   Copyright 2022 Nomadic Labs <contact@nomadic-labs.com>               */
+/*                                                                        */
+/*   All rights reserved.  This file is distributed under the terms of    */
+/*   the GNU Lesser General Public License version 2.1, with the          */
+/*   special exception on linking described in the file LICENSE.          */
+/*                                                                        */
+/**************************************************************************/
+
 #define CAML_INTERNALS
 
 #include "caml/mlvalues.h"
@@ -26,10 +40,6 @@ uintnat caml_dump_after_compact = 0;
    This is set when parsing [OCAMLRUNPARAM]
 */
 
-/* TODO
- * Dump Caml_state?
- */
-
 static FILE *fp; // File of the dump
 
 /*
@@ -40,8 +50,10 @@ static FILE *fp; // File of the dump
  * in the major heap
  */
 
+#ifdef NATIVE_CODE
+
 void caml_do_full_dump(const char *filename) {
-  value null;
+  value null, taglib;
   null = 0;
 
   // Opening the file for the dump
@@ -52,6 +64,9 @@ void caml_do_full_dump(const char *filename) {
     fprintf(stderr, "File can not be opened\n");
     return;
   }
+
+  taglib = caml_read_tag_section(Val_unit);
+  fwrite(&taglib, Bsize_wsize(1), 1, fp);
 
   // Dump the root
   caml_do_roots(dump_roots, 1);
@@ -68,6 +83,12 @@ void caml_do_full_dump(const char *filename) {
   fclose(fp);
   return;
 }
+
+#else
+
+void caml_do_full_dump(const char *filename) { return; }
+
+#endif
 
 /* Take a ocaml string as input and dump the memory in it */
 CAMLprim value caml_full_dump(value value_filename) {
@@ -108,7 +129,8 @@ void dump_minor_heap() {
 
 void dump_roots(value root, value *dummy) {
 #ifdef NO_NAKED_POINTERS
-  if (Is_block(root) && !Is_young(root)) {
+  if (Is_block(root) &&
+      !Is_young(root)) { // TODO: Why do we not scan young root?
 #else
   if (Is_block(root) && Is_in_heap(root)) {
 #endif
